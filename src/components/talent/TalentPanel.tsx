@@ -369,80 +369,113 @@ function TalentTreeGrid({
 
   return (
     <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4">
+      {/* 天赋树标题 */}
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-bold text-[#eaeaea]">{board.nameCN}</h4>
+        <span className="text-xs text-[#a0a0b0]">已投入 {totalPoints} 点</span>
+      </div>
+      
       {/* 天赋树网格 */}
       <div className="relative overflow-x-auto overflow-y-hidden" style={{ minHeight: '400px', maxHeight: '600px' }}>
-        <svg 
-          width={gridWidth + 200} 
-          height={gridHeight + 120}
-          className="block"
-        >
-          {/* 背景网格 */}
-          <defs>
-            <pattern id="grid" width="120" height="80" patternUnits="userSpaceOnUse">
-              <path d="M 120 0 L 0 0 0 80" fill="none" stroke="#1a1a3a" strokeWidth="0.5" opacity="0.3" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-          
-          {/* 层级标签 */}
-          {renderTierLabels()}
-          
-          {/* 连接线 */}
-          {renderConnections()}
-          
-          {/* 节点 */}
-          {nodes.map(node => {
-            const isActive = getNodePoints(node.id) > 0;
-            const isLocked = totalPoints < node.requiredPoints;
-            const sizeClass = getNodeSizeClass(node.nodeType);
-            const colorClass = getNodeClasses(node, isActive, isLocked);
+        <div className="flex items-center justify-center py-4">
+          <svg 
+            width={gridWidth + 200} 
+            height={gridHeight + 120}
+            className="block"
+          >
+            {/* 背景网格 */}
+            <defs>
+              <pattern id="grid" width="120" height="80" patternUnits="userSpaceOnUse">
+                <path d="M 120 0 L 0 0 0 80" fill="none" stroke="#1a1a3a" strokeWidth="0.5" opacity="0.3" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
             
-            // 横向布局：交换 X 和 Y 轴
-            const x = (node.y - minY) * 120 + 60;
-            const y = (node.x - minX) * 80 + 40;
+            {/* 层级标签 */}
+            {renderTierLabels()}
             
-            return (
-              <g key={node.id}>
-                <foreignObject 
-                  x={x - 25} 
-                  y={y - 25} 
-                  width="50" 
-                  height="50"
-                >
-                  <div 
-                    className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
-                    onClick={() => onLeftClick(node, board)}
-                    onContextMenu={e => onRightClick(e, node)}
-                    onMouseEnter={() => setHoveredNode(node.id)}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    style={{
-                      transform: isHovered === node.id ? 'scale(1.1)' : 'scale(1)',
-                      boxShadow: isActive ? 
-                        node.nodeType === 'micro' ? '0 0 10px rgba(59, 130, 246, 0.5)' :
-                        node.nodeType === 'medium' ? '0 0 12px rgba(168, 85, 247, 0.5)' :
-                        '0 0 14px rgba(245, 158, 11, 0.5)' : 
-                        'none'
-                    }}
+            {/* 连接线 */}
+            {renderConnections()}
+            
+            {/* 节点 */}
+            {nodes.map(node => {
+              const isActive = getNodePoints(node.id) > 0;
+              const isLocked = totalPoints < node.requiredPoints;
+              const sizeClass = getNodeSizeClass(node.nodeType);
+              const colorClass = getNodeClasses(node, isActive, isLocked);
+              
+              // 横向布局：交换 X 和 Y 轴
+              const x = (node.y - minY) * 120 + 60;
+              const y = (node.x - minX) * 80 + 40;
+              
+              return (
+                <g key={node.id}>
+                  {/* 节点背景光晕 */}
+                  {isActive && (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={25}
+                      fill={node.nodeType === 'micro' ? 'rgba(59, 130, 246, 0.2)' :
+                            node.nodeType === 'medium' ? 'rgba(168, 85, 247, 0.2)' :
+                            'rgba(245, 158, 11, 0.2)'}
+                      opacity={0.6}
+                    />
+                  )}
+                  
+                  <foreignObject 
+                    x={x - 25} 
+                    y={y - 25} 
+                    width="50" 
+                    height="50"
                   >
-                    <span className="text-xs font-bold font-mono text-white leading-none">
-                      {isActive ? getNodePoints(node.id) : ''}
-                    </span>
-                  </div>
-                </foreignObject>
-                
-                {/* 点数标签 */}
-                <text 
-                  x={x} 
-                  y={y + 40} 
-                  textAnchor="middle" 
-                  className="text-[10px] font-mono text-[#a0a0b0]"
-                >
-                  {getNodePoints(node.id)}/{node.maxPoints}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+                    <div 
+                      className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
+                      onClick={() => onLeftClick(node, board)}
+                      onContextMenu={e => onRightClick(e, node)}
+                      onMouseEnter={() => setHoveredNode(node.id)}
+                      onMouseLeave={() => setHoveredNode(null)}
+                      style={{
+                        transform: isHovered === node.id ? 'scale(1.1)' : 'scale(1)',
+                        boxShadow: isActive ? 
+                          node.nodeType === 'micro' ? '0 0 15px rgba(59, 130, 246, 0.6)' :
+                          node.nodeType === 'medium' ? '0 0 18px rgba(168, 85, 247, 0.6)' :
+                          '0 0 20px rgba(245, 158, 11, 0.6)' : 
+                          'none'
+                      }}
+                    >
+                      <span className="text-xs font-bold font-mono text-white leading-none">
+                        {isActive ? getNodePoints(node.id) : ''}
+                      </span>
+                    </div>
+                  </foreignObject>
+                  
+                  {/* 点数标签 */}
+                  <text 
+                    x={x} 
+                    y={y + 40} 
+                    textAnchor="middle" 
+                    className="text-[10px] font-mono text-[#a0a0b0]"
+                  >
+                    {getNodePoints(node.id)}/{node.maxPoints}
+                  </text>
+                  
+                  {/* 节点名称 */}
+                  {isHovered === node.id && (
+                    <text 
+                      x={x} 
+                      y={y - 35} 
+                      textAnchor="middle" 
+                      className="text-[10px] font-mono font-bold text-[#eaeaea] bg-[#0f0f23] px-2 py-1 rounded"
+                    >
+                      {node.nameCN}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
 
       {/* 图例 */}
