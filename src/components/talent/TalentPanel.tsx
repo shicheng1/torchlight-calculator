@@ -380,7 +380,8 @@ export function TalentPanel() {
 
   // 从 store 读取当前核心天赋选择
   const boardCoreSelections: Record<number, string> = {};
-  for (const ct of loadout.coreTalents) {
+  const coreTalents = Array.isArray(loadout.coreTalents) ? loadout.coreTalents : [];
+  for (const ct of coreTalents) {
     if (ct.boardId === selectedBoardId) {
       boardCoreSelections[ct.slotIndex] = ct.optionId;
     }
@@ -388,7 +389,7 @@ export function TalentPanel() {
 
   /* ---- 统计 ---- */
 
-  const totalUsed = loadout.talents.reduce((sum, t) => sum + t.points, 0);
+  const totalUsed = (Array.isArray(loadout.talents) ? loadout.talents : []).reduce((sum, t) => sum + t.points, 0);
   const totalMax = boards.reduce(
     (sum, board) => sum + board.nodes.reduce((s, n) => s + n.maxPoints, 0),
     0,
