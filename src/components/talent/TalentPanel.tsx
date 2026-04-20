@@ -245,6 +245,15 @@ function TalentTreeGrid({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const totalPoints = getBoardTotalPoints(board);
 
+  // 安全检查：确保 board 和 nodes 存在
+  if (!board || !board.nodes || board.nodes.length === 0) {
+    return (
+      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4 text-center text-[#a0a0b0]">
+        暂无天赋数据
+      </div>
+    );
+  }
+
   // 计算网格尺寸和节点位置（横向布局）
   const nodes = board.nodes;
   const minY = Math.min(...nodes.map(n => n.y));
@@ -356,7 +365,12 @@ function TalentTreeGrid({
             x={x} 
             y={y} 
             textAnchor="middle" 
-            className="text-[10px] font-mono font-bold text-[#a0a0b0]"
+            style={{
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              fontWeight: 'bold',
+              fill: '#a0a0b0'
+            }}
           >
             第 {tier} 层
           </text>
@@ -455,22 +469,14 @@ function TalentTreeGrid({
                     x={x} 
                     y={y + 40} 
                     textAnchor="middle" 
-                    className="text-[10px] font-mono text-[#a0a0b0]"
+                    style={{
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      fill: '#a0a0b0'
+                    }}
                   >
                     {getNodePoints(node.id)}/{node.maxPoints}
                   </text>
-                  
-                  {/* 节点名称 */}
-                  {isHovered === node.id && (
-                    <text 
-                      x={x} 
-                      y={y - 35} 
-                      textAnchor="middle" 
-                      className="text-[10px] font-mono font-bold text-[#eaeaea] bg-[#0f0f23] px-2 py-1 rounded"
-                    >
-                      {node.nameCN}
-                    </text>
-                  )}
                 </g>
               );
             })}
