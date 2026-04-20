@@ -21,6 +21,8 @@ interface BuildState {
   clearGear: (slot: EquipmentSlot) => void;
   // 天赋
   setTalentPoints: (nodeId: string, points: number) => void;
+  // 核心天赋
+  setCoreTalent: (boardId: string, slotIndex: number, optionId: string | null) => void;
   // 契灵
   setPactspirit: (slot: number, config: PactspiritConfig | null) => void;
   // 追忆
@@ -51,6 +53,7 @@ const defaultLoadout: Loadout = {
   skillGroups: [{ ...defaultSkillGroup }],
   selectedSkillGroupIndex: 0,
   talents: [],
+  coreTalents: [],
   divinitySlates: [],
   heroMemories: [],
   pactspirits: [],
@@ -146,6 +149,16 @@ export const useBuildStore = create<BuildState>()(
           talents.push({ nodeId, points });
         }
         return { loadout: { ...state.loadout, talents } };
+      }),
+
+      setCoreTalent: (boardId, slotIndex, optionId) => set((state) => {
+        const coreTalents = state.loadout.coreTalents.filter(
+          ct => !(ct.boardId === boardId && ct.slotIndex === slotIndex)
+        );
+        if (optionId !== null) {
+          coreTalents.push({ boardId, slotIndex, optionId });
+        }
+        return { loadout: { ...state.loadout, coreTalents } };
       }),
 
       setPactspirit: (slot, config) => set((state) => {

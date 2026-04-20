@@ -1,5 +1,5 @@
 import type { Mod } from '../types/mod.ts';
-import type { Loadout, TalentNodeConfig, DivinitySlateConfig, HeroMemoryConfig, PactspiritConfig } from '../types/calc.ts';
+import type { Loadout, TalentNodeConfig, CoreTalentSelection, DivinitySlateConfig, HeroMemoryConfig, PactspiritConfig } from '../types/calc.ts';
 import type { GearInstance } from '../types/gear.ts';
 import type { SkillGroup } from '../types/skill.ts';
 import { getSkill } from '@/data/skills/index.ts';
@@ -23,6 +23,9 @@ export function collectAllMods(loadout: Loadout): Mod[] {
 
   // 3. 从天赋收集
   collectFromTalents(loadout.talents, mods);
+
+  // 3.5 从核心天赋收集
+  collectFromCoreTalents(loadout.coreTalents, mods);
 
   // 4. 从神格石板收集
   collectFromSlates(loadout.divinitySlates, mods);
@@ -108,6 +111,23 @@ function collectFromTalents(talents: TalentNodeConfig[], mods: Mod[]): void {
     for (let i = 0; i < talent.points; i++) {
       mods.push(...nodeData.mods);
     }
+  }
+}
+
+function collectFromCoreTalents(coreTalents: CoreTalentSelection[], mods: Mod[]): void {
+  const boards = getAllTalentBoards();
+
+  for (const ct of coreTalents) {
+    const board = boards.find(b => b.id === ct.boardId);
+    if (!board) continue;
+
+    const slot = board.coreSlots.find(s => s.slotIndex === ct.slotIndex);
+    if (!slot) continue;
+
+    const option = slot.options.find(o => o.id === ct.optionId);
+    if (!option) continue;
+
+    mods.push(...option.mods);
   }
 }
 

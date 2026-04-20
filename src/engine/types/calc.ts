@@ -179,6 +179,7 @@ export interface Loadout {
   skillGroups: import('./skill.ts').SkillGroup[];
   selectedSkillGroupIndex: number;
   talents: TalentNodeConfig[];
+  coreTalents: CoreTalentSelection[];
   divinitySlates: DivinitySlateConfig[];
   heroMemories: HeroMemoryConfig[];
   pactspirits: PactspiritConfig[];
@@ -188,6 +189,13 @@ export interface Loadout {
 export interface TalentNodeConfig {
   nodeId: string;
   points: number;
+}
+
+// 核心天赋选择
+export interface CoreTalentSelection {
+  boardId: string;
+  slotIndex: number;
+  optionId: string;
 }
 
 // 神格石板配置

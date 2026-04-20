@@ -9,9 +9,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-    }
-  },
-  server: {
-    port: 8085, // 改成你想要的端口
+    },
   },
 })
