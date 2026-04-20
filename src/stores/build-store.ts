@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Loadout, PactspiritConfig, HeroMemoryConfig, DivinitySlateConfig } from '@/engine/types/calc.ts';
 import type { EquipmentSlot } from '@/engine/types/gear.ts';
+import { getAllTalentBoards } from '@/data/talent-trees/index.ts';
 
 interface BuildState {
   loadout: Loadout;
@@ -21,6 +22,7 @@ interface BuildState {
   clearGear: (slot: EquipmentSlot) => void;
   // 天赋板选择
   setTalentBoards: (boardIds: string[]) => void;
+  setTalentBoardsWithCleanup: (boardIds: string[], boardToRemove?: string) => void;
   // 天赋点
   setTalentPoints: (nodeId: string, points: number) => void;
   // 核心天赋

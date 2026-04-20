@@ -4,8 +4,6 @@ import {
   getAllTalentBoards,
   type TalentBoardData,
   type TalentNodeData,
-  type CoreTalentSlot,
-  type CoreTalentOption,
 } from '@/data/talent-trees/index.ts';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary.tsx';
 
@@ -46,39 +44,43 @@ function getNodeSizeClass(nodeType: TalentNodeData['nodeType']): string {
   }
 }
 
-// 天赋板选择组件
-function TalentBoardSelector({
-  availableBoards,
-  selectedBoards,
-  onToggleBoard,
+// 天赋板选择卡片组件
+function TalentBoardCard({
+  board,
+  isSelected,
+  isSelectable,
+  onToggle,
 }: {
-  availableBoards: TalentBoardData[];
-  selectedBoards: string[];
-  onToggleBoard: (boardId: string) => void;
+  board: TalentBoardData;
+  isSelected: boolean;
+  isSelectable: boolean;
+  onToggle: () => void;
 }) {
   return (
-    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4 mb-4">
-      <h3 className="text-sm font-bold text-[#eaeaea] mb-3">选择天赋板 (最多4个)</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {availableBoards.map((board) => {
-          const isSelected = selectedBoards.includes(board.id);
-          return (
-            <button
-              key={board.id}
-              onClick={() => onToggleBoard(board.id)}
-              className={`p-3 rounded-lg border text-left transition-all ${
-                isSelected
-                  ? 'bg-[#e94560]/20 border-[#e94560] text-[#eaeaea]'
-                  : 'bg-[#0f0f23] border-[#2a2a4a] text-[#a0a0b0] hover:border-[#e94560]/50'
-              }`}
-            >
-              <div className="font-medium text-sm">{board.nameCN}</div>
-              <div className="text-xs opacity-70 mt-1">{board.description}</div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <button
+      onClick={onToggle}
+      disabled={!isSelected && !isSelectable}
+      className={`p-4 rounded-lg border-2 text-left transition-all relative overflow-hidden ${
+        isSelected
+          ? 'bg-[#1a1a2e] border-[#e94560] text-[#eaeaea] shadow-lg shadow-[#e94560]/20'
+          : isSelectable
+          ? 'bg-[#0f0f23] border-[#2a2a4a] text-[#a0a0b0] hover:border-[#e94560]/50 hover:text-[#eaeaea]'
+          : 'bg-[#0a0a14] border-[#1a1a2a] text-[#505060] opacity-50 cursor-not-allowed'
+      }`}
+    >
+      {isSelected && (
+        <div className="absolute top-2 right-2 w-4 h-4 bg-[#e94560] rounded-full flex items-center justify-center">
+          <span className="text-[8px]">✓</span>
+        </div>
+      )}
+      <div className="font-bold text-base mb-1">{board.nameCN}</div>
+      <div className="text-xs opacity-75 mb-2">{board.description}</div>
+      {board.coreMechanic && (
+        <div className="text-[10px] text-[#808090] bg-[#0f0f23] rounded px-2 py-1">
+          {board.coreMechanic}
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -89,16 +91,12 @@ function TalentBoardView({
   getBoardTotalPoints,
   onLeftClick,
   onRightClick,
-  onCoreSelect,
-  boardCoreSelections,
 }: {
   board: TalentBoardData;
   getNodePoints: (nodeId: string) => number;
   getBoardTotalPoints: (board: TalentBoardData) => number;
   onLeftClick: (node: TalentNodeData, board: TalentBoardData) => void;
   onRightClick: (e: React.MouseEvent, node: TalentNodeData) => void;
-  onCoreSelect: (boardId: string, slotIndex: number, optionId: string | null) => void;
-  boardCoreSelections: Record<number, string>;
 }) {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const totalPoints = getBoardTotalPoints(board);
@@ -113,29 +111,34 @@ function TalentBoardView({
   const numRows = maxX - minX + 1;
 
   return (
-    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4 mb-4">
+    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-5">
       {/* 标题和点数统计 */}
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#2a2a4a]">
         <div>
-          <h3 className="text-base font-bold text-[#eaeaea]">{board.nameCN}</h3>
+          <h3 className="text-lg font-bold text-[#eaeaea]">{board.nameCN}</h3>
           {board.coreMechanic && (
             <p className="text-xs text-[#a0a0b0] mt-1">{board.coreMechanic}</p>
           )}
         </div>
         <div className="text-right">
-          <span className="text-[#e94560] font-mono font-bold">{totalPoints}</span>
-          <span className="text-[#a0a0b0] text-sm"> 已投入</span>
+          <div className="text-[#e94560] font-mono font-bold text-xl">{totalPoints}</div>
+          <div className="text-[#a0a0b0] text-xs">已投入</div>
         </div>
       </div>
 
       {/* 核心天赋选择区域 */}
       {board.coreSlots && board.coreSlots.length > 0 && (
-        <div className="mb-4 p-3 bg-[#0f0f23] rounded-lg border border-[#2a2a4a]">
-          <h4 className="text-sm font-medium text-[#eaeaea] mb-2">核心天赋</h4>
+        <div className="mb-5 p-4 bg-[#0f0f23] rounded-lg border border-[#2a2a4a]">
+          <h4 className="text-sm font-medium text-[#eaeaea] mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 bg-[#e94560] rounded-full"></span>
+            核心天赋
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {board.coreSlots.map((slot, slotIndex) => {
               const isLocked = totalPoints < slot.unlockPoints;
-              const selectedOptionId = boardCoreSelections[slotIndex] ?? '';
+              const selectedOptionId = useBuildStore.getState().loadout.coreTalents.find(
+                ct => ct.boardId === board.id && ct.slotIndex === slotIndex
+              )?.optionId;
 
               return (
                 <div key={slotIndex}>
@@ -143,13 +146,13 @@ function TalentBoardView({
                     <span className="text-xs text-[#eaeaea]">
                       核心天赋 {slotIndex === 0 ? 'I' : 'II'}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a3a] text-[#a0a0b0] border border-[#3a3a5a]">
+                    <span className="text-xs px-3 py-0.5 rounded-full bg-[#1a1a3a] text-[#a0a0b0] border border-[#3a3a5a]">
                       {slot.unlockPoints}点解锁
                     </span>
                   </div>
                   {isLocked ? (
                     <div className="flex items-center justify-center py-4 text-[#a0a0b0] text-xs">
-                      <span>已锁定</span>
+                      <span className="opacity-60">🔒 已锁定</span>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -158,17 +161,22 @@ function TalentBoardView({
                         return (
                           <button
                             key={option.id}
-                            onClick={() =>
-                              onCoreSelect(board.id, slotIndex, isSelected ? null : option.id)
-                            }
-                            className={`w-full px-3 py-2 rounded-lg border text-xs transition-all text-left ${
+                            onClick={() => {
+                              useBuildStore.getState().setCoreTalent(
+                                board.id,
+                                slotIndex,
+                                isSelected ? null : option.id
+                              );
+                              setHoveredNode(null);
+                            }}
+                            className={`w-full px-4 py-3 rounded-lg border-2 text-xs transition-all text-left ${
                               isSelected
-                                ? 'bg-gradient-to-r from-amber-900/30 to-amber-800/20 border-amber-500 text-[#eaeaea]'
+                                ? 'bg-gradient-to-r from-amber-900/30 to-amber-800/20 border-amber-500 text-[#eaeaea] shadow-sm shadow-amber-500/20'
                                 : 'bg-[#1a1a3a] border-[#3a3a5a] hover:border-amber-500/50 text-[#a0a0b0] hover:text-[#eaeaea]'
                             }`}
                           >
-                            <div className="font-medium mb-0.5">{option.nameCN}</div>
-                            <div className="opacity-70 leading-tight">{option.description}</div>
+                            <div className="font-medium mb-1 text-sm">{option.nameCN}</div>
+                            <div className="opacity-80 leading-tight">{option.description}</div>
                           </button>
                         );
                       })}
@@ -182,10 +190,10 @@ function TalentBoardView({
       )}
 
       {/* 天赋树网格 */}
-      <div className="relative overflow-x-auto">
+      <div className="relative overflow-x-auto pb-2">
         <div
-          className="flex flex-col-reverse items-start gap-0.5 py-2"
-          style={{ width: `${numTiers * 110}px` }}
+          className="flex flex-col-reverse items-start gap-1 py-3"
+          style={{ width: `${numTiers * 120}px` }}
         >
           {Array.from({ length: numRows }).map((_, rowIdx) => {
             const currentX = minX + rowIdx;
@@ -194,8 +202,8 @@ function TalentBoardView({
             return (
               <div
                 key={`row-${currentX}`}
-                className="flex items-center justify-start gap-0.5"
-                style={{ width: `${numTiers * 110}px`, minHeight: '50px' }}
+                className="flex items-center justify-start gap-1"
+                style={{ width: `${numTiers * 120}px`, minHeight: '55px' }}
               >
                 {Array.from({ length: numTiers }).map((_, tierIdx) => {
                   const currentY = minY + tierIdx;
@@ -205,7 +213,7 @@ function TalentBoardView({
                     return (
                       <div
                         key={`empty-${currentX}-${currentY}`}
-                        style={{ width: '110px' }}
+                        style={{ width: '120px' }}
                       />
                     );
                   }
@@ -220,23 +228,23 @@ function TalentBoardView({
                     <div
                       key={node.id}
                       className="relative flex flex-col items-center justify-center"
-                      style={{ width: '110px', height: '50px' }}
+                      style={{ width: '120px', height: '55px' }}
                     >
                       {/* 节点本身 */}
                       <div
                         className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
-                        onClick={() => onLeftClick(node, board)}
-                        onContextMenu={(e) => onRightClick(e, node)}
+                        onClick={() => !isLocked && onLeftClick(node, board)}
+                        onContextMenu={(e) => !isLocked && onRightClick(e, node)}
                         onMouseEnter={() => setHoveredNode(node.id)}
                         onMouseLeave={() => setHoveredNode(null)}
                         style={{
-                          transform: hoveredNode === node.id ? 'scale(1.1)' : 'scale(1)',
+                          transform: hoveredNode === node.id ? 'scale(1.15)' : 'scale(1)',
                           boxShadow: isActive
                             ? node.nodeType === 'micro'
-                              ? '0 0 10px rgba(59, 130, 246, 0.5)'
-                              : node.nodeType === 'medium'
-                              ? '0 0 12px rgba(168, 85, 247, 0.5)'
-                              : '0 0 14px rgba(245, 158, 11, 0.5)'
+                            ? '0 0 12px rgba(59, 130, 246, 0.5)'
+                            : node.nodeType === 'medium'
+                            ? '0 0 14px rgba(168, 85, 247, 0.5)'
+                            : '0 0 16px rgba(245, 158, 11, 0.5)'
                             : 'none',
                         }}
                       >
@@ -246,29 +254,29 @@ function TalentBoardView({
                       </div>
 
                       {/* 点数标签 */}
-                      <div className="text-[9px] font-mono text-[#a0a0b0] mt-0.5">
+                      <div className="text-[9px] font-mono text-[#a0a0b0] mt-1">
                         {points}/{node.maxPoints}
                       </div>
 
                       {/* 悬浮提示 */}
                       {hoveredNode === node.id && (
                         <div
-                          className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#0f0f23] border border-[#2a2a4a] rounded-lg px-3 py-2 text-xs shadow-xl max-w-56 whitespace-normal"
-                          style={{ minWidth: '200px' }}
+                          className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-3 bg-[#0f0f23] border border-[#2a2a4a] rounded-lg px-4 py-3 text-xs shadow-2xl max-w-64 whitespace-normal"
+                          style={{ minWidth: '240px' }}
                         >
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-2 h-2 bg-[#0f0f23] border-r border-b border-[#2a2a4a] rotate-45 -mb-1" />
-                          <div className="font-bold text-[#eaeaea]">{node.nameCN}</div>
-                          <div className="text-[#a0a0b0] mt-1">{node.description}</div>
-                          <div className="text-[#e94560] font-mono mt-1">
-                            {points}/{node.maxPoints}
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3 h-3 bg-[#0f0f23] border-r border-b border-[#2a2a4a] rotate-45 -mb-1.5"></div>
+                          <div className="font-bold text-[#eaeaea] mb-2 text-sm">{node.nameCN}</div>
+                          <div className="text-[#a0a0b0] mb-2 leading-relaxed">{node.description}</div>
+                          <div className="text-[#e94560] font-mono text-sm mb-2">
+                            当前: {points}/{node.maxPoints}
                           </div>
                           {isLocked && (
-                            <div className="text-yellow-400 mt-1">
+                            <div className="text-yellow-400 text-xs mb-2">
                               需要投入 {node.requiredPoints} 点解锁
                             </div>
                           )}
                           {!isLocked && points < node.maxPoints && (
-                            <div className="text-[#a0a0b0] mt-1">
+                            <div className="text-[#707080] text-xs">
                               左键加点 / 右键减点
                             </div>
                           )}
@@ -284,21 +292,21 @@ function TalentBoardView({
       </div>
 
       {/* 图例 */}
-      <div className="flex flex-wrap gap-4 pt-3 mt-3 border-t border-[#2a2a4a]">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-500/30" />
-          <span className="text-xs text-[#a0a0b0]">小型 (3点)</span>
+      <div className="flex flex-wrap gap-5 pt-4 mt-4 border-t border-[#2a2a4a]">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-blue-500 shadow-sm shadow-blue-500/30"></div>
+          <span className="text-xs text-[#a0a0b0]">小型天赋</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-purple-500 shadow-sm shadow-purple-500/30" />
-          <span className="text-xs text-[#a0a0b0]">中型</span>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-purple-500 shadow-sm shadow-purple-500/30"></div>
+          <span className="text-xs text-[#a0a0b0]">中型天赋</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-amber-500 shadow-sm shadow-amber-500/30" />
-          <span className="text-xs text-[#a0a0b0]">大型 (1点)</span>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-amber-500 shadow-sm shadow-amber-500/30"></div>
+          <span className="text-xs text-[#a0a0b0]">大型/传奇天赋</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#111] border border-[#222] opacity-40" />
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-[#111] border border-[#222] opacity-40"></div>
           <span className="text-xs text-[#a0a0b0]">未解锁</span>
         </div>
       </div>
@@ -311,9 +319,8 @@ export function TalentPanel() {
   const boards = getAllTalentBoards();
   const {
     loadout,
-    setTalentBoards,
+    setTalentBoardsWithCleanup,
     setTalentPoints,
-    setCoreTalent,
   } = useBuildStore();
 
   const selectedBoards = loadout.talentBoards || [];
@@ -325,21 +332,14 @@ export function TalentPanel() {
     const index = currentSelected.indexOf(boardId);
 
     if (index !== -1) {
-      // 取消选择，移除天赋点
-      const board = boards.find(b => b.id === boardId);
-      const nodeIdsToRemove = board?.nodes.map(n => n.id) || [];
-      const filteredTalents = loadout.talents.filter(t => !nodeIdsToRemove.includes(t.nodeId));
-      const filteredCoreTalents = (Array.isArray(loadout.coreTalents) ? loadout.coreTalents : []).filter(
-        ct => ct.boardId !== boardId
+      // 取消选择
+      setTalentBoardsWithCleanup(
+        currentSelected.filter(id => id !== boardId),
+        boardId
       );
-      setTalentBoards(currentSelected.filter(id => id !== boardId));
-      setTalentPoints('', 0); // 这个只是为了触发store更新，我们需要修改更多
-      useBuildStore.setState((state) => ({
-        loadout: { ...state.loadout, talents: filteredTalents, coreTalents: filteredCoreTalents }
-      }));
     } else if (currentSelected.length < 4) {
       // 选择新天赋板
-      setTalentBoards([...currentSelected, boardId]);
+      setTalentBoardsWithCleanup([...currentSelected, boardId]);
     }
   };
 
@@ -373,11 +373,6 @@ export function TalentPanel() {
     }
   };
 
-  // 核心天赋选择
-  const handleCoreSelect = (boardId: string, slotIndex: number, optionId: string | null) => {
-    setCoreTalent(boardId, slotIndex, optionId);
-  };
-
   // 计算总点数（所有天赋板）
   const totalUsedPoints = (Array.isArray(loadout.talents) ? loadout.talents : []).reduce(
     (sum, t) => sum + t.points,
@@ -385,44 +380,64 @@ export function TalentPanel() {
   );
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto flex-1 bg-[#0f0f23] max-h-[calc(100vh-64px)]">
+    <div className="p-5 space-y-5 overflow-y-auto flex-1 bg-[#0f0f23] max-h-[calc(100vh-64px)]">
       {/* 标题区域 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#eaeaea]">天赋配置</h2>
-        <div className="text-right">
-          <span className="text-[#e94560] font-mono font-bold">{totalUsedPoints}</span>
-          <span className="text-[#a0a0b0] text-sm"> 已投入总天赋点</span>
+        <div>
+          <h2 className="text-xl font-bold text-[#eaeaea] flex items-center gap-2">
+            <span className="w-3 h-3 bg-[#e94560] rounded-full"></span>
+            天赋配置
+          </h2>
+          <p className="text-xs text-[#707080] mt-1">
+            选择最多 4 个天赋板，分配天赋点
+          </p>
+        </div>
+        <div className="text-right bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg px-4 py-2">
+          <div className="text-[#e94560] font-mono font-bold text-2xl">{totalUsedPoints}</div>
+          <div className="text-[#a0a0b0] text-xs">总投入点数</div>
         </div>
       </div>
 
-      {/* 天赋板选择 */}
-      <TalentBoardSelector
-        availableBoards={boards}
-        selectedBoards={selectedBoards}
-        onToggleBoard={handleToggleBoard}
-      />
+      {/* 天赋板选择区域 */}
+      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-[#eaeaea] flex items-center gap-2">
+            <span className="w-2 h-2 bg-[#e94560] rounded-full"></span>
+            天赋板选择
+            <span className="text-xs text-[#707080] font-normal ml-2">
+              ({selectedBoards.length}/4 已选择)
+            </span>
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {boards.map((board) => (
+            <TalentBoardCard
+              key={board.id}
+              board={board}
+              isSelected={selectedBoards.includes(board.id)}
+              isSelectable={selectedBoards.length < 4 || selectedBoards.includes(board.id)}
+              onToggle={() => handleToggleBoard(board.id)}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* 已选择的天赋板视图 */}
       {selectedBoardData.length === 0 ? (
-        <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-8 text-center text-[#a0a0b0]">
-          <p className="mb-2">请选择天赋板</p>
-          <p className="text-xs opacity-70">支持最多选择4个天赋板</p>
+        <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-10 text-center">
+          <div className="text-4xl mb-4 opacity-30">🎯</div>
+          <p className="text-[#a0a0b0] text-lg mb-2">请先选择天赋板</p>
+          <p className="text-[#707080] text-sm">在上方选择最多 4 个天赋板开始配置</p>
         </div>
       ) : (
-        selectedBoardData.map((board) => {
-          const boardCoreSelections: Record<number, string> = {};
-          const coreTalents = Array.isArray(loadout.coreTalents) ? loadout.coreTalents : [];
-          for (const ct of coreTalents) {
-            if (ct.boardId === board.id) {
-              boardCoreSelections[ct.slotIndex] = ct.optionId;
-            }
-          }
-          return (
+        <div className="space-y-6">
+          {selectedBoardData.map((board) => (
             <ErrorBoundary
               key={board.id}
               fallback={
-                <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 text-red-200 text-center">
-                  <p>{board.nameCN} 加载失败</p>
+                <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-6 text-red-200 text-center">
+                  <p className="font-medium mb-1">{board.nameCN} 加载失败</p>
+                  <p className="text-xs opacity-70">请刷新页面重试</p>
                 </div>
               }
             >
@@ -432,12 +447,10 @@ export function TalentPanel() {
                 getBoardTotalPoints={getBoardTotalPoints}
                 onLeftClick={handleLeftClick}
                 onRightClick={handleRightClick}
-                onCoreSelect={handleCoreSelect}
-                boardCoreSelections={boardCoreSelections}
               />
             </ErrorBoundary>
-          );
-        })
+          ))}
+        </div>
       )}
     </div>
   );

@@ -65,8 +65,8 @@ function calculateNormalPipeline(
   const baseResult = calcBaseDamage({
     isAttack,
     skillBaseDamagePct: skillData?.baseDamagePct ?? 100,
-    weaponBaseDamage: {},    // TODO: 从 gearBase 获取
-    spellBaseDamage: skillData?.baseDamage ?? {},
+    weaponBaseDamage: {} as Partial<Record<DmgChunkType, { min: number; max: number }>>,    // TODO: 从 gearBase 获取
+    spellBaseDamage: (skillData?.baseDamage ?? {}) as Partial<Record<DmgChunkType, { min: number; max: number }>>,
     skillEffectiveness: 1.0,
     aggregated,
     skillTags,
@@ -127,7 +127,7 @@ function calculateMinionPipeline(
 ): CalculationResult {
   // 召唤物伤害计算
   const minionDetail = calcMinionDamage({
-    minionBaseDamage: skillData?.minionBaseDamage ?? {},
+    minionBaseDamage: (skillData?.minionBaseDamage ?? {}) as Partial<Record<DmgChunkType, { min: number; max: number }>>,
     minionBaseAttackSpeed: skillData?.minionAttackSpeed ?? 1.0,
     minionCount: (skillData?.minionCount ?? 0) + aggregated.minionCount,
     aggregated,

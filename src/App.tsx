@@ -12,7 +12,7 @@ import { DamageBreakdown } from '@/components/calc-result/DamageBreakdown.tsx';
 import { useUIStore } from '@/stores/ui-store.ts';
 import { useBuildStore } from '@/stores/build-store.ts';
 import { useConfigStore } from '@/stores/config-store.ts';
-import { exportBuild, importBuild, exportToJSON, importFromJSON } from '@/utils/import-export.ts';
+import { exportBuild, importBuild, importFromJSON } from '@/utils/import-export.ts';
 import { useState, useCallback } from 'react';
 
 function TabContent() {
@@ -50,14 +50,6 @@ export default function App() {
     const config = useConfigStore.getState().config;
     const code = exportBuild(loadout, config);
     setExportText(code);
-    setShowExportModal(true);
-  }, []);
-
-  const handleExportJSON = useCallback(() => {
-    const loadout = useBuildStore.getState().loadout;
-    const config = useConfigStore.getState().config;
-    const json = exportToJSON(loadout, config);
-    setExportText(json);
     setShowExportModal(true);
   }, []);
 
