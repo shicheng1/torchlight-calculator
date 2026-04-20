@@ -10,7 +10,15 @@ export function importBuild(code: string): { loadout: Loadout; config: Calculati
   try {
     const data = JSON.parse(decodeURIComponent(atob(code)));
     if (data.version !== 1) return null;
-    return { loadout: data.loadout, config: data.config };
+    const loadout = data.loadout;
+    // Ensure all array fields are arrays
+    loadout.skillGroups = Array.isArray(loadout.skillGroups) ? loadout.skillGroups : [];
+    loadout.talents = Array.isArray(loadout.talents) ? loadout.talents : [];
+    loadout.coreTalents = Array.isArray(loadout.coreTalents) ? loadout.coreTalents : [];
+    loadout.divinitySlates = Array.isArray(loadout.divinitySlates) ? loadout.divinitySlates : [];
+    loadout.heroMemories = Array.isArray(loadout.heroMemories) ? loadout.heroMemories : [];
+    loadout.pactspirits = Array.isArray(loadout.pactspirits) ? loadout.pactspirits : [];
+    return { loadout, config: data.config };
   } catch {
     return null;
   }
@@ -24,7 +32,15 @@ export function importFromJSON(json: string): { loadout: Loadout; config: Calcul
   try {
     const data = JSON.parse(json);
     if (data.version !== 1) return null;
-    return { loadout: data.loadout, config: data.config };
+    const loadout = data.loadout;
+    // Ensure all array fields are arrays
+    loadout.skillGroups = Array.isArray(loadout.skillGroups) ? loadout.skillGroups : [];
+    loadout.talents = Array.isArray(loadout.talents) ? loadout.talents : [];
+    loadout.coreTalents = Array.isArray(loadout.coreTalents) ? loadout.coreTalents : [];
+    loadout.divinitySlates = Array.isArray(loadout.divinitySlates) ? loadout.divinitySlates : [];
+    loadout.heroMemories = Array.isArray(loadout.heroMemories) ? loadout.heroMemories : [];
+    loadout.pactspirits = Array.isArray(loadout.pactspirits) ? loadout.pactspirits : [];
+    return { loadout, config: data.config };
   } catch {
     return null;
   }

@@ -152,9 +152,9 @@ export const useBuildStore = create<BuildState>()(
       }),
 
       setCoreTalent: (boardId, slotIndex, optionId) => set((state) => {
-        const coreTalents = state.loadout.coreTalents.filter(
+        const coreTalents = Array.isArray(state.loadout.coreTalents) ? state.loadout.coreTalents.filter(
           ct => !(ct.boardId === boardId && ct.slotIndex === slotIndex)
-        );
+        ) : [];
         if (optionId !== null) {
           coreTalents.push({ boardId, slotIndex, optionId });
         }

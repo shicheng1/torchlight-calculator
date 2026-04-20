@@ -117,6 +117,8 @@ function collectFromTalents(talents: TalentNodeConfig[], mods: Mod[]): void {
 function collectFromCoreTalents(coreTalents: CoreTalentSelection[], mods: Mod[]): void {
   const boards = getAllTalentBoards();
 
+  if (!Array.isArray(coreTalents)) return;
+
   for (const ct of coreTalents) {
     const board = boards.find(b => b.id === ct.boardId);
     if (!board) continue;
