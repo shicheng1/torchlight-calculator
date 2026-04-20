@@ -152,9 +152,14 @@ function CoreTalentSection({
   onSelect: (boardId: string, slotIndex: number, optionId: string | null) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-bold text-[#eaeaea]">核心天赋</h3>
-      <div className="grid grid-cols-1 gap-3">
+    <div className="space-y-4">
+      <h3 className="text-sm font-bold text-[#eaeaea] flex items-center gap-2">
+        <svg className="w-4 h-4 text-[#e94560]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        核心天赋
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {slots.map((slot, slotIndex) => {
           const isLocked = boardTotalPoints < slot.unlockPoints;
           const selectedOptionId = selections[slotIndex] ?? '';
@@ -162,35 +167,33 @@ function CoreTalentSection({
           return (
             <div
               key={slotIndex}
-              className={`bg-[#1a1a2e] border rounded-lg p-3 transition-all ${
+              className={`bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border rounded-lg p-4 transition-all shadow-lg ${
                 isLocked
                   ? 'border-[#222] opacity-60'
-                  : 'border-[#2a2a4a]'
+                  : 'border-[#2a2a4a] hover:border-[#e94560]/50'
               }`}
             >
               {/* 卡片头部 */}
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-[#eaeaea]">
-                  核心天赋 {slotIndex === 0 ? 'I' : 'II'} ({slot.unlockPoints}点解锁)
+                  核心天赋 {slotIndex === 0 ? 'I' : 'II'}
                 </span>
-                {isLocked && (
-                  <span className="text-xs text-[#a0a0b0]">
-                    需要 {slot.unlockPoints} 点
-                  </span>
-                )}
+                <span className="text-xs px-2 py-1 rounded-full bg-[#1a1a3a] text-[#a0a0b0]">
+                  {slot.unlockPoints}点解锁
+                </span>
               </div>
 
               {/* 锁定状态 */}
               {isLocked ? (
-                <div className="flex items-center justify-center py-4 text-[#a0a0b0] text-sm gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="flex items-center justify-center py-6 text-[#a0a0b0] text-sm gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                   未解锁
                 </div>
               ) : (
                 /* 选项按钮 */
-                <div className="flex gap-2">
+                <div className="space-y-2">
                   {slot.options.map((option: CoreTalentOption) => {
                     const isSelected = selectedOptionId === option.id;
                     return (
@@ -199,14 +202,14 @@ function CoreTalentSection({
                         onClick={() =>
                           onSelect(boardId, slotIndex, isSelected ? null : option.id)
                         }
-                        className={`flex-1 px-2 py-2 rounded border text-xs transition-all text-left ${
+                        className={`w-full px-3 py-3 rounded border text-sm transition-all text-left ${
                           isSelected
-                            ? 'bg-amber-900/40 border-amber-500 shadow-lg shadow-amber-500/30 text-[#eaeaea]'
-                            : 'bg-[#1a1a3a] border-[#3a3a5a] hover:border-amber-500/50 text-[#a0a0b0]'
+                            ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/20 border-amber-500 shadow-lg shadow-amber-500/20 text-[#eaeaea]'
+                            : 'bg-[#1a1a3a] border-[#3a3a5a] hover:border-amber-500/50 text-[#a0a0b0] hover:text-[#eaeaea]'
                         }`}
                       >
-                        <div className="font-medium">{option.nameCN}</div>
-                        <div className="text-[10px] mt-1 opacity-80 leading-snug">
+                        <div className="font-medium mb-1">{option.nameCN}</div>
+                        <div className="text-xs opacity-80 leading-snug">
                           {option.description}
                         </div>
                       </button>
@@ -223,7 +226,7 @@ function CoreTalentSection({
 }
 
 /* ------------------------------------------------------------------ */
-/*  TalentTreeGrid - 基于层级的天赋树网格                               */
+/*  TalentTreeGrid - 基于坐标的天赋树网格                               */
 /* ------------------------------------------------------------------ */
 
 function TalentTreeGrid({
@@ -242,66 +245,107 @@ function TalentTreeGrid({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const totalPoints = getBoardTotalPoints(board);
 
-  // 按层级分组
-  const tierMap = groupNodesByTier(board.nodes);
-  const sortedTiers = Array.from(tierMap.entries()).sort(([a], [b]) => a - b);
+  // 计算网格尺寸和节点位置
+  const nodes = board.nodes;
+  const minX = Math.min(...nodes.map(n => n.x));
+  const maxX = Math.max(...nodes.map(n => n.x));
+  const minY = Math.min(...nodes.map(n => n.y));
+  const maxY = Math.max(...nodes.map(n => n.y));
+  
+  const gridWidth = (maxX - minX + 1) * 80;
+  const gridHeight = (maxY - minY + 1) * 80;
+
+  // 生成连接线
+  const renderConnections = () => {
+    const connections = [];
+    // 简单的连接逻辑：连接相邻层级的节点
+    for (let y = minY; y < maxY; y++) {
+      const currentTier = nodes.filter(n => n.y === y);
+      const nextTier = nodes.filter(n => n.y === y + 1);
+      
+      currentTier.forEach(currentNode => {
+        nextTier.forEach(nextNode => {
+          // 只连接水平距离为1或2的节点
+          if (Math.abs(currentNode.x - nextNode.x) <= 2) {
+            connections.push(
+              <line
+                key={`${currentNode.id}-${nextNode.id}`}
+                x1={(currentNode.x - minX) * 80 + 40}
+                y1={(currentNode.y - minY) * 80 + 40}
+                x2={(nextNode.x - minX) * 80 + 40}
+                y2={(nextNode.y - minY) * 80 + 40}
+                stroke={totalPoints >= currentNode.requiredPoints ? '#2a2a4a' : '#111'}
+                strokeWidth={2}
+                strokeOpacity={totalPoints >= currentNode.requiredPoints ? 0.6 : 0.2}
+              />
+            );
+          }
+        });
+      });
+    }
+    return connections;
+  };
 
   return (
-    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4 space-y-4">
-      {sortedTiers.map(([requiredPts, nodes]) => {
-        const microNodes = nodes.filter(n => n.nodeType === 'micro');
-        const otherNodes = nodes.filter(n => n.nodeType !== 'micro');
-
-        return (
-          <div key={requiredPts} className="flex items-start gap-3">
-            {/* 层级标签 */}
-            <div className="w-12 text-right text-xs text-[#a0a0b0] pt-2 shrink-0 font-mono">
-              {requiredPts}点
-            </div>
-
-            {/* 节点容器 */}
-            <div className="flex flex-wrap items-start gap-3 flex-1">
-              {/* 小节点 (micro) */}
-              {microNodes.map(node => (
-                <TalentNode
-                  key={node.id}
-                  node={node}
-                  points={getNodePoints(node.id)}
-                  isLocked={totalPoints < node.requiredPoints}
-                  isHovered={hoveredNode === node.id}
-                  onLeftClick={() => onLeftClick(node, board)}
-                  onRightClick={e => onRightClick(e, node)}
-                  onHoverEnter={() => setHoveredNode(node.id)}
-                  onHoverLeave={() => setHoveredNode(null)}
-                />
-              ))}
-
-              {/* 分隔线 */}
-              {microNodes.length > 0 && otherNodes.length > 0 && (
-                <div className="w-px self-stretch bg-[#2a2a4a] my-1" />
-              )}
-
-              {/* 中型 / 神格节点 */}
-              {otherNodes.map(node => (
-                <TalentNode
-                  key={node.id}
-                  node={node}
-                  points={getNodePoints(node.id)}
-                  isLocked={totalPoints < node.requiredPoints}
-                  isHovered={hoveredNode === node.id}
-                  onLeftClick={() => onLeftClick(node, board)}
-                  onRightClick={e => onRightClick(e, node)}
-                  onHoverEnter={() => setHoveredNode(node.id)}
-                  onHoverLeave={() => setHoveredNode(null)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4">
+      {/* 天赋树网格 */}
+      <div className="relative overflow-auto" style={{ minHeight: '500px' }}>
+        <svg 
+          width={gridWidth + 80} 
+          height={gridHeight + 80}
+          className="mx-auto"
+        >
+          {/* 连接线 */}
+          {renderConnections()}
+          
+          {/* 节点 */}
+          {nodes.map(node => {
+            const isActive = getNodePoints(node.id) > 0;
+            const isLocked = totalPoints < node.requiredPoints;
+            const sizeClass = getNodeSizeClass(node.nodeType);
+            const colorClass = getNodeClasses(node, isActive, isLocked);
+            
+            const x = (node.x - minX) * 80 + 40;
+            const y = (node.y - minY) * 80 + 40;
+            
+            return (
+              <g key={node.id}>
+                <foreignObject 
+                  x={x - 25} 
+                  y={y - 25} 
+                  width="50" 
+                  height="50"
+                >
+                  <div 
+                    className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all select-none ${colorClass}`}
+                    onClick={() => onLeftClick(node, board)}
+                    onContextMenu={e => onRightClick(e, node)}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    <span className="text-xs font-bold font-mono text-white leading-none">
+                      {isActive ? getNodePoints(node.id) : ''}
+                    </span>
+                  </div>
+                </foreignObject>
+                
+                {/* 点数标签 */}
+                <text 
+                  x={x} 
+                  y={y + 40} 
+                  textAnchor="middle" 
+                  className="text-[10px] font-mono text-[#a0a0b0]"
+                >
+                  {getNodePoints(node.id)}/{node.maxPoints}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       {/* 图例 */}
-      <div className="flex gap-4 pt-3 text-xs text-[#a0a0b0] border-t border-[#2a2a4a]">
+      <div className="flex flex-wrap gap-4 pt-4 text-xs text-[#a0a0b0] border-t border-[#2a2a4a]">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-blue-500" />
           <span>基础 (3点)</span>
@@ -449,8 +493,32 @@ export function TalentPanel() {
         />
       )}
 
+      {/* ====== 棱镜配置 ====== */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-[#eaeaea] flex items-center gap-2">
+          <svg className="w-4 h-4 text-[#e94560]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          棱镜配置
+        </h3>
+        <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border border-[#2a2a4a] rounded-lg p-4 shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[1, 2, 3].map((slot) => (
+              <div key={slot} className="bg-[#1a1a3a] border border-[#3a3a5a] rounded-lg p-3 text-center">
+                <div className="text-xs text-[#a0a0b0] mb-2">棱镜 {slot}</div>
+                <div className="text-sm font-medium text-[#eaeaea]">未装备</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-xs text-[#a0a0b0] text-center">
+            棱镜可提供额外的天赋效果和属性加成
+          </div>
+        </div>
+      </div>
+
       {/* ====== 已用点数 ====== */}
-      <div className="flex items-center justify-between bg-[#1a1a2e] border border-[#2a2a4a] rounded px-4 py-2">
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-[#2a2a4a] rounded px-4 py-3 shadow-lg">
         <span className="text-sm text-[#a0a0b0]">已用天赋点数</span>
         <span className="font-mono text-sm">
           <span className="text-[#e94560]">{totalUsed}</span>
