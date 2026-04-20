@@ -178,6 +178,7 @@ export interface Loadout {
   gear: import('./gear.ts').LoadoutGear;
   skillGroups: import('./skill.ts').SkillGroup[];
   selectedSkillGroupIndex: number;
+  talentBoards: string[]; // 选择的天赋板 ID 列表，最多4个
   talents: TalentNodeConfig[];
   coreTalents: CoreTalentSelection[];
   divinitySlates: DivinitySlateConfig[];

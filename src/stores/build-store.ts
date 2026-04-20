@@ -19,7 +19,9 @@ interface BuildState {
   // 装备
   setGear: (slot: EquipmentSlot, gear: import('@/engine/types/gear.ts').GearInstance | null) => void;
   clearGear: (slot: EquipmentSlot) => void;
-  // 天赋
+  // 天赋板选择
+  setTalentBoards: (boardIds: string[]) => void;
+  // 天赋点
   setTalentPoints: (nodeId: string, points: number) => void;
   // 核心天赋
   setCoreTalent: (boardId: string, slotIndex: number, optionId: string | null) => void;
@@ -52,6 +54,7 @@ const defaultLoadout: Loadout = {
   },
   skillGroups: [{ ...defaultSkillGroup }],
   selectedSkillGroupIndex: 0,
+  talentBoards: [], // 最多选择4个天赋板
   talents: [],
   coreTalents: [],
   divinitySlates: [],
@@ -139,6 +142,37 @@ export const useBuildStore = create<BuildState>()(
       clearGear: (slot) => set((state) => ({
         loadout: { ...state.loadout, gear: { ...state.loadout.gear, [slot]: null } }
       })),
+
+      setTalentBoards: (boardIds) => set((state) => ({
+        loadout: { ...state.loadout, talentBoards: boardIds.slice(0, 4) } // 最多4个天赋板
+      })),
+
+      setTalentBoardsWithCleanup: (boardIds: string[], boardToRemove?: string) => set((state) => {
+    const newBoards = boardIds.slice(0, 4);
+    // 清理被移除天赋板的天赋点和核心天赋
+    let newTalents = [...state.loadout.talents];
+    let newCoreTalents = Array.isArray(state.loadout.coreTalents) ? [...state.loadout.coreTalents] : [];
+
+    if (boardToRemove) {
+      const boardData = getAllTalentBoards().find(b => b.id === boardToRemove);
+      if (boardData) {
+        const nodeIdsToRemove = boardData.nodes.map(n => n.id);
+        newTalents = state.loadout.talents.filter(t => !nodeIdsToRemove.includes(t.nodeId));
+        newCoreTalents = (Array.isArray(state.loadout.coreTalents) ? state.loadout.coreTalents : []).filter(
+          ct => ct.boardId !== boardToRemove
+        );
+      }
+    }
+
+    return {
+      loadout: {
+        ...state.loadout,
+        talentBoards: newBoards,
+        talents: newTalents,
+        coreTalents: newCoreTalents
+      }
+    };
+  }),
 
       setTalentPoints: (nodeId, points) => set((state) => {
         const talents = state.loadout.talents.map(t =>
