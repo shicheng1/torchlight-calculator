@@ -226,7 +226,7 @@ function CoreTalentSection({
 }
 
 /* ------------------------------------------------------------------ */
-/*  TalentTreeGrid - 基于坐标的天赋树网格                               */
+/*  TalentTreeGrid - 横向天赋树网格                                    */
 /* ------------------------------------------------------------------ */
 
 function TalentTreeGrid({
@@ -245,35 +245,42 @@ function TalentTreeGrid({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const totalPoints = getBoardTotalPoints(board);
 
-  // 计算网格尺寸和节点位置
+  // 计算网格尺寸和节点位置（横向布局）
   const nodes = board.nodes;
-  const minX = Math.min(...nodes.map(n => n.x));
-  const maxX = Math.max(...nodes.map(n => n.x));
   const minY = Math.min(...nodes.map(n => n.y));
   const maxY = Math.max(...nodes.map(n => n.y));
+  const minX = Math.min(...nodes.map(n => n.x));
+  const maxX = Math.max(...nodes.map(n => n.x));
   
-  const gridWidth = (maxX - minX + 1) * 80;
-  const gridHeight = (maxY - minY + 1) * 80;
+  // 横向布局：Y 轴作为横向层级，X 轴作为纵向位置
+  const gridWidth = (maxY - minY + 1) * 100;
+  const gridHeight = (maxX - minX + 1) * 80;
 
-  // 生成连接线
+  // 生成连接线（横向布局）
   const renderConnections = () => {
     const connections = [];
-    // 简单的连接逻辑：连接相邻层级的节点
+    // 连接相邻横向层级的节点
     for (let y = minY; y < maxY; y++) {
       const currentTier = nodes.filter(n => n.y === y);
       const nextTier = nodes.filter(n => n.y === y + 1);
       
       currentTier.forEach(currentNode => {
         nextTier.forEach(nextNode => {
-          // 只连接水平距离为1或2的节点
+          // 只连接纵向距离为1或2的节点
           if (Math.abs(currentNode.x - nextNode.x) <= 2) {
+            // 横向布局：交换 X 和 Y 轴
+            const x1 = (currentNode.y - minY) * 100 + 50;
+            const y1 = (currentNode.x - minX) * 80 + 40;
+            const x2 = (nextNode.y - minY) * 100 + 50;
+            const y2 = (nextNode.x - minX) * 80 + 40;
+            
             connections.push(
               <line
                 key={`${currentNode.id}-${nextNode.id}`}
-                x1={(currentNode.x - minX) * 80 + 40}
-                y1={(currentNode.y - minY) * 80 + 40}
-                x2={(nextNode.x - minX) * 80 + 40}
-                y2={(nextNode.y - minY) * 80 + 40}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
                 stroke={totalPoints >= currentNode.requiredPoints ? '#2a2a4a' : '#111'}
                 strokeWidth={2}
                 strokeOpacity={totalPoints >= currentNode.requiredPoints ? 0.6 : 0.2}
@@ -289,11 +296,11 @@ function TalentTreeGrid({
   return (
     <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4">
       {/* 天赋树网格 */}
-      <div className="relative overflow-auto" style={{ minHeight: '500px' }}>
+      <div className="relative overflow-x-auto" style={{ minHeight: '300px' }}>
         <svg 
-          width={gridWidth + 80} 
+          width={gridWidth + 100} 
           height={gridHeight + 80}
-          className="mx-auto"
+          className="block"
         >
           {/* 连接线 */}
           {renderConnections()}
@@ -305,8 +312,9 @@ function TalentTreeGrid({
             const sizeClass = getNodeSizeClass(node.nodeType);
             const colorClass = getNodeClasses(node, isActive, isLocked);
             
-            const x = (node.x - minX) * 80 + 40;
-            const y = (node.y - minY) * 80 + 40;
+            // 横向布局：交换 X 和 Y 轴
+            const x = (node.y - minY) * 100 + 50;
+            const y = (node.x - minX) * 80 + 40;
             
             return (
               <g key={node.id}>
@@ -338,6 +346,18 @@ function TalentTreeGrid({
                 >
                   {getNodePoints(node.id)}/{node.maxPoints}
                 </text>
+                
+                {/* 层级标签 */}
+                {node.y === minY && (
+                  <text 
+                    x={x} 
+                    y={y - 30} 
+                    textAnchor="middle" 
+                    className="text-[10px] font-mono text-[#a0a0b0]"
+                  >
+                    {node.requiredPoints}点
+                  </text>
+                )}
               </g>
             );
           })}
