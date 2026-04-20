@@ -442,7 +442,7 @@ export function TalentPanel() {
   /* ---- 渲染 ---- */
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto flex-1 bg-[#0f0f23]">
+    <div className="p-4 space-y-4 overflow-y-auto flex-1 bg-[#0f0f23] max-h-[calc(100vh-64px)]">
       <h2 className="text-lg font-bold text-[#eaeaea]">天赋配置</h2>
 
       {/* ====== 天赋板选择 ====== */}
