@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBuildStore } from '@/stores/build-store.ts';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary.tsx';
 import {
   getAllTalentBoards,
   type TalentBoardData,
@@ -262,124 +263,8 @@ function TalentTreeGrid({
   const maxX = Math.max(...nodes.map(n => n.x));
   
   // 横向布局：Y 轴作为横向层级，X 轴作为纵向位置
-  const gridWidth = (maxY - minY + 1) * 120;
-  const gridHeight = (maxX - minX + 1) * 80;
-
-  // 生成连接线（横向布局）
-  const renderConnections = () => {
-    const connections = [];
-    
-    // 1. 连接相邻横向层级的节点（主要连接）
-    for (let y = minY; y < maxY; y++) {
-      const currentTier = nodes.filter(n => n.y === y);
-      const nextTier = nodes.filter(n => n.y === y + 1);
-      
-      currentTier.forEach(currentNode => {
-        nextTier.forEach(nextNode => {
-          // 只连接纵向距离为1或2的节点，模拟游戏中的实际连接
-          if (Math.abs(currentNode.x - nextNode.x) <= 2) {
-            // 横向布局：交换 X 和 Y 轴
-            const x1 = (currentNode.y - minY) * 120 + 60;
-            const y1 = (currentNode.x - minX) * 80 + 40;
-            const x2 = (nextNode.y - minY) * 120 + 60;
-            const y2 = (nextNode.x - minX) * 80 + 40;
-            
-            // 检查是否可以连接（基于解锁状态）
-            const canConnect = totalPoints >= currentNode.requiredPoints;
-            
-            connections.push(
-              <line
-                key={`${currentNode.id}-${nextNode.id}`}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                stroke={canConnect ? '#3a3a5a' : '#111'}
-                strokeWidth={2}
-                strokeOpacity={canConnect ? 0.8 : 0.2}
-                strokeLinecap="round"
-              />
-            );
-          }
-        });
-      });
-    }
-    
-    // 2. 连接同层级的节点（辅助连接）
-    for (let y = minY; y <= maxY; y++) {
-      const currentTier = nodes.filter(n => n.y === y).sort((a, b) => a.x - b.x);
-      
-      for (let i = 0; i < currentTier.length - 1; i++) {
-        const node1 = currentTier[i];
-        const node2 = currentTier[i + 1];
-        
-        // 只连接相邻的节点
-        if (Math.abs(node1.x - node2.x) === 1) {
-          const x1 = (node1.y - minY) * 120 + 60;
-          const y1 = (node1.x - minX) * 80 + 40;
-          const x2 = (node2.y - minY) * 120 + 60;
-          const y2 = (node2.x - minX) * 80 + 40;
-          
-          // 检查是否可以连接（基于解锁状态）
-          const canConnect = totalPoints >= Math.min(node1.requiredPoints, node2.requiredPoints);
-          
-          connections.push(
-            <line
-              key={`${node1.id}-${node2.id}-same-tier`}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke={canConnect ? '#2a2a4a' : '#111'}
-              strokeWidth={1}
-              strokeOpacity={canConnect ? 0.4 : 0.1}
-              strokeDasharray="4,2"
-            />
-          );
-        }
-      }
-    }
-    
-    return connections;
-  };
-
-  // 生成层级标签
-  const renderTierLabels = () => {
-    const labels = [];
-    const tiers = new Set(nodes.map(n => n.requiredPoints));
-    
-    tiers.forEach(tier => {
-      const tierNodes = nodes.filter(n => n.requiredPoints === tier);
-      if (tierNodes.length > 0) {
-        // 找到该层级的中心位置
-        const minTierY = Math.min(...tierNodes.map(n => n.y));
-        const maxTierY = Math.max(...tierNodes.map(n => n.y));
-        const centerY = (minTierY + maxTierY) / 2;
-        
-        const x = (centerY - minY) * 120 + 60;
-        const y = -20;
-        
-        labels.push(
-          <text 
-            key={`tier-${tier}`}
-            x={x} 
-            y={y} 
-            textAnchor="middle" 
-            style={{
-              fontSize: '10px',
-              fontFamily: 'monospace',
-              fontWeight: 'bold',
-              fill: '#a0a0b0'
-            }}
-          >
-            第 {tier} 层
-          </text>
-        );
-      }
-    });
-    
-    return labels;
-  };
+  const numTiers = maxY - minY + 1;
+  const numRows = maxX - minX + 1;
 
   return (
     <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4">
@@ -390,97 +275,100 @@ function TalentTreeGrid({
       </div>
       
       {/* 天赋树网格 */}
-      <div className="relative overflow-x-auto overflow-y-hidden" style={{ minHeight: '400px', maxHeight: '600px' }}>
-        <div className="flex items-center justify-center py-4">
-          <svg 
-            width={gridWidth + 200} 
-            height={gridHeight + 120}
-            className="block"
-          >
-            {/* 背景网格 */}
-            <defs>
-              <pattern id="grid" width="120" height="80" patternUnits="userSpaceOnUse">
-                <path d="M 120 0 L 0 0 0 80" fill="none" stroke="#1a1a3a" strokeWidth="0.5" opacity="0.3" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+      <div className="relative overflow-x-auto" style={{ minHeight: '300px' }}>
+        <div 
+          className="flex flex-col-reverse items-start gap-2 px-4 py-4"
+          style={{ 
+            width: `${numTiers * 140}px`,
+          }}
+        >
+          {/* 渲染每一行（垂直方向） */}
+          {Array.from({ length: numRows }).map((_, rowIdx) => {
+            const currentX = minX + rowIdx;
+            const rowNodes = nodes.filter(n => n.x === currentX);
             
-            {/* 层级标签 */}
-            {renderTierLabels()}
-            
-            {/* 连接线 */}
-            {renderConnections()}
-            
-            {/* 节点 */}
-            {nodes.map(node => {
-              const isActive = getNodePoints(node.id) > 0;
-              const isLocked = totalPoints < node.requiredPoints;
-              const sizeClass = getNodeSizeClass(node.nodeType);
-              const colorClass = getNodeClasses(node, isActive, isLocked);
-              
-              // 横向布局：交换 X 和 Y 轴
-              const x = (node.y - minY) * 120 + 60;
-              const y = (node.x - minX) * 80 + 40;
-              
-              return (
-                <g key={node.id}>
-                  {/* 节点背景光晕 */}
-                  {isActive && (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={25}
-                      fill={node.nodeType === 'micro' ? 'rgba(59, 130, 246, 0.2)' :
-                            node.nodeType === 'medium' ? 'rgba(168, 85, 247, 0.2)' :
-                            'rgba(245, 158, 11, 0.2)'}
-                      opacity={0.6}
-                    />
-                  )}
+            return (
+              <div 
+                key={`row-${currentX}`}
+                className="flex items-center justify-start gap-2"
+                style={{ 
+                  minHeight: '70px', 
+                  width: `${numTiers * 140}px`
+                }}
+              >
+                {/* 为每个层级（横向）准备位置 */}
+                {Array.from({ length: numTiers }).map((_, tierIdx) => {
+                  const currentY = minY + tierIdx;
+                  const node = rowNodes.find(n => n.y === currentY);
                   
-                  <foreignObject 
-                    x={x - 25} 
-                    y={y - 25} 
-                    width="50" 
-                    height="50"
-                  >
+                  if (!node) {
+                    // 空位置
+                    return (
+                      <div 
+                        key={`empty-${currentX}-${currentY}`}
+                        style={{ width: '140px' }}
+                      />
+                    );
+                  }
+                  
+                  const isActive = getNodePoints(node.id) > 0;
+                  const isLocked = totalPoints < node.requiredPoints;
+                  const sizeClass = getNodeSizeClass(node.nodeType);
+                  const colorClass = getNodeClasses(node, isActive, isLocked);
+                  const points = getNodePoints(node.id);
+                  
+                  return (
                     <div 
-                      className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
-                      onClick={() => onLeftClick(node, board)}
-                      onContextMenu={e => onRightClick(e, node)}
-                      onMouseEnter={() => setHoveredNode(node.id)}
-                      onMouseLeave={() => setHoveredNode(null)}
-                      style={{
-                        transform: isHovered === node.id ? 'scale(1.1)' : 'scale(1)',
-                        boxShadow: isActive ? 
-                          node.nodeType === 'micro' ? '0 0 15px rgba(59, 130, 246, 0.6)' :
-                          node.nodeType === 'medium' ? '0 0 18px rgba(168, 85, 247, 0.6)' :
-                          '0 0 20px rgba(245, 158, 11, 0.6)' : 
-                          'none'
-                      }}
+                      key={node.id}
+                      className="relative flex flex-col items-center justify-center"
+                      style={{ width: '140px' }}
                     >
-                      <span className="text-xs font-bold font-mono text-white leading-none">
-                        {isActive ? getNodePoints(node.id) : ''}
-                      </span>
+                      {/* 节点 */}
+                      <div 
+                        className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
+                        onClick={() => onLeftClick(node, board)}
+                        onContextMenu={e => onRightClick(e, node)}
+                        onMouseEnter={() => setHoveredNode(node.id)}
+                        onMouseLeave={() => setHoveredNode(null)}
+                        style={{
+                          transform: hoveredNode === node.id ? 'scale(1.1)' : 'scale(1)',
+                          boxShadow: isActive ? 
+                            node.nodeType === 'micro' ? '0 0 15px rgba(59, 130, 246, 0.6)' :
+                            node.nodeType === 'medium' ? '0 0 18px rgba(168, 85, 247, 0.6)' :
+                            '0 0 20px rgba(245, 158, 11, 0.6)' : 
+                            'none'
+                        }}
+                      >
+                        <span className="text-xs font-bold font-mono text-white leading-none">
+                          {isActive ? points : ''}
+                        </span>
+                      </div>
+                      
+                      {/* 点数标签 */}
+                      <div className="text-[10px] font-mono text-[#a0a0b0] mt-1">
+                        {points}/{node.maxPoints}
+                      </div>
+                      
+                      {/* 悬浮提示 */}
+                      {hoveredNode === node.id && (
+                        <div className="absolute z-50 bg-[#0f0f23] border border-[#2a2a4a] rounded-lg px-3 py-2 text-sm shadow-xl max-w-52 whitespace-normal pointer-events-none"
+                          style={{ bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8 }}
+                        >
+                          <div className="font-bold text-[#eaeaea]">{node.nameCN}</div>
+                          <div className="text-xs text-[#a0a0b0] mt-1">{node.description}</div>
+                          {isLocked && (
+                            <div className="text-xs text-yellow-400 mt-1">
+                              需要投入 {node.requiredPoints} 点解锁
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </foreignObject>
-                  
-                  {/* 点数标签 */}
-                  <text 
-                    x={x} 
-                    y={y + 40} 
-                    textAnchor="middle" 
-                    style={{
-                      fontSize: '10px',
-                      fontFamily: 'monospace',
-                      fill: '#a0a0b0'
-                    }}
-                  >
-                    {getNodePoints(node.id)}/{node.maxPoints}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -624,13 +512,19 @@ export function TalentPanel() {
 
       {/* ====== 天赋树网格 ====== */}
       {selectedBoard && (
-        <TalentTreeGrid
-          board={selectedBoard}
-          getNodePoints={getNodePoints}
-          getBoardTotalPoints={getBoardTotalPoints}
-          onLeftClick={handleLeftClick}
-          onRightClick={handleRightClick}
-        />
+        <ErrorBoundary fallback={
+          <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4 text-center text-[#a0a0b0]">
+            天赋树渲染出错
+          </div>
+        }>
+          <TalentTreeGrid
+            board={selectedBoard}
+            getNodePoints={getNodePoints}
+            getBoardTotalPoints={getBoardTotalPoints}
+            onLeftClick={handleLeftClick}
+            onRightClick={handleRightClick}
+          />
+        </ErrorBoundary>
       )}
 
       {/* ====== 棱镜配置 ====== */}
