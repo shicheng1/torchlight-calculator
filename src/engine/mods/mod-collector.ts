@@ -7,6 +7,7 @@ import { getAllTalentBoards } from '@/data/talent-trees/index.ts';
 import { getSlate } from '@/data/slate/index.ts';
 import { getHeroMemory } from '@/data/hero-memory/index.ts';
 import { getPactspirit } from '@/data/pactspirit/index.ts';
+import { getHero } from '@/data/heroes/index.ts';
 
 /**
  * 从完整的 BD 配置（Loadout）中收集所有 Mod
@@ -14,6 +15,9 @@ import { getPactspirit } from '@/data/pactspirit/index.ts';
  */
 export function collectAllMods(loadout: Loadout): Mod[] {
   const mods: Mod[] = [];
+
+  // 0. 从英雄特性收集
+  collectFromHeroTraits(loadout.hero, mods);
 
   // 1. 从装备收集
   collectFromGear(loadout.gear, mods);
@@ -37,6 +41,21 @@ export function collectAllMods(loadout: Loadout): Mod[] {
   collectFromPactspirits(loadout.pactspirits, mods);
 
   return mods;
+}
+
+function collectFromHeroTraits(heroConfig: Loadout['hero'], mods: Mod[]): void {
+  const heroData = getHero(heroConfig.heroId);
+  if (!heroData) return;
+
+  const currentTrait = heroData.traits.find(t => t.id === heroConfig.traitId);
+  if (!currentTrait) return;
+
+  // 收集所有等级不超过当前等级的特性 Mods
+  for (const levelMod of currentTrait.levelMods) {
+    if (levelMod.level <= heroConfig.level) {
+      mods.push(...levelMod.mods);
+    }
+  }
 }
 
 function collectFromGear(gear: Loadout['gear'], mods: Mod[]): void {

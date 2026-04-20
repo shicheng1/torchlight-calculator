@@ -113,7 +113,7 @@ function HeroPanel() {
 
       {/* 英雄头像和名称 */}
       {currentHero && (
-        <HeroDisplay hero={currentHero} level={loadout.hero.level} />
+        <HeroDisplay hero={currentHero} level={loadout.hero.level} traitId={loadout.hero.traitId} />
       )}
 
       {/* 等级输入 */}
@@ -156,7 +156,7 @@ function HeroPanel() {
   );
 }
 
-function HeroDisplay({ hero, level }: { hero: HeroData; level: number }) {
+function HeroDisplay({ hero, level, traitId }: { hero: HeroData; level: number; traitId: string }) {
   const icon = HERO_ICONS[hero.id] ?? '⭐';
 
   // 根据等级动态计算属性
@@ -168,7 +168,7 @@ function HeroDisplay({ hero, level }: { hero: HeroData; level: number }) {
   const totalMana = hero.baseMana + hero.manaPerLevel * (effectiveLevel - 1);
 
   // 当前选中的特性
-  const currentTrait = hero.traits.find(t => t.id === hero.traits[0]?.id);
+  const currentTrait = hero.traits.find(t => t.id === traitId);
 
   return (
     <div className="space-y-3">
@@ -177,8 +177,17 @@ function HeroDisplay({ hero, level }: { hero: HeroData; level: number }) {
           {icon}
         </div>
         <h2 className="mt-2 text-base font-bold">{hero.nameCN}</h2>
-        <p className="text-xs text-[#a0a0a0]">{currentTrait?.nameCN ?? ''}</p>
+        {currentTrait && (
+          <p className="text-xs text-[#e94560] font-medium mt-1">{currentTrait.nameCN}</p>
+        )}
       </div>
+
+      {/* 特性描述 */}
+      {currentTrait && (
+        <div className="bg-[#0f3460]/50 rounded-lg p-3 border border-[#e94560]/20">
+          <div className="text-xs text-[#eaeaea] leading-relaxed">{currentTrait.description}</div>
+        </div>
+      )}
 
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
