@@ -159,7 +159,7 @@ function CoreTalentSection({
         </svg>
         核心天赋
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {slots.map((slot, slotIndex) => {
           const isLocked = boardTotalPoints < slot.unlockPoints;
           const selectedOptionId = selections[slotIndex] ?? '';
@@ -170,7 +170,7 @@ function CoreTalentSection({
               className={`bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border rounded-lg p-4 transition-all shadow-lg ${
                 isLocked
                   ? 'border-[#222] opacity-60'
-                  : 'border-[#2a2a4a] hover:border-[#e94560]/50'
+                  : 'border-[#2a2a4a] hover:border-[#e94560]/50 hover:shadow-xl hover:shadow-[#e94560]/5'
               }`}
             >
               {/* 卡片头部 */}
@@ -178,7 +178,7 @@ function CoreTalentSection({
                 <span className="text-sm font-medium text-[#eaeaea]">
                   核心天赋 {slotIndex === 0 ? 'I' : 'II'}
                 </span>
-                <span className="text-xs px-2 py-1 rounded-full bg-[#1a1a3a] text-[#a0a0b0]">
+                <span className="text-xs px-2 py-1 rounded-full bg-[#1a1a3a] text-[#a0a0b0] border border-[#3a3a5a]">
                   {slot.unlockPoints}点解锁
                 </span>
               </div>
@@ -202,14 +202,14 @@ function CoreTalentSection({
                         onClick={() =>
                           onSelect(boardId, slotIndex, isSelected ? null : option.id)
                         }
-                        className={`w-full px-3 py-3 rounded border text-sm transition-all text-left ${
+                        className={`w-full px-4 py-3 rounded-lg border text-sm transition-all duration-200 text-left ${
                           isSelected
-                            ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/20 border-amber-500 shadow-lg shadow-amber-500/20 text-[#eaeaea]'
-                            : 'bg-[#1a1a3a] border-[#3a3a5a] hover:border-amber-500/50 text-[#a0a0b0] hover:text-[#eaeaea]'
+                            ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/20 border-amber-500 shadow-lg shadow-amber-500/20 text-[#eaeaea] transform scale-102'
+                            : 'bg-[#1a1a3a] border-[#3a3a5a] hover:border-amber-500/50 hover:text-[#eaeaea] hover:bg-[#1a1a3a]/80'
                         }`}
                       >
-                        <div className="font-medium mb-1">{option.nameCN}</div>
-                        <div className="text-xs opacity-80 leading-snug">
+                        <div className="font-medium mb-1 text-[#eaeaea]">{option.nameCN}</div>
+                        <div className="text-xs opacity-80 leading-snug text-[#a0a0b0]">
                           {option.description}
                         </div>
                       </button>
@@ -253,26 +253,30 @@ function TalentTreeGrid({
   const maxX = Math.max(...nodes.map(n => n.x));
   
   // 横向布局：Y 轴作为横向层级，X 轴作为纵向位置
-  const gridWidth = (maxY - minY + 1) * 100;
+  const gridWidth = (maxY - minY + 1) * 120;
   const gridHeight = (maxX - minX + 1) * 80;
 
   // 生成连接线（横向布局）
   const renderConnections = () => {
     const connections = [];
-    // 连接相邻横向层级的节点
+    
+    // 1. 连接相邻横向层级的节点（主要连接）
     for (let y = minY; y < maxY; y++) {
       const currentTier = nodes.filter(n => n.y === y);
       const nextTier = nodes.filter(n => n.y === y + 1);
       
       currentTier.forEach(currentNode => {
         nextTier.forEach(nextNode => {
-          // 只连接纵向距离为1或2的节点
+          // 只连接纵向距离为1或2的节点，模拟游戏中的实际连接
           if (Math.abs(currentNode.x - nextNode.x) <= 2) {
             // 横向布局：交换 X 和 Y 轴
-            const x1 = (currentNode.y - minY) * 100 + 50;
+            const x1 = (currentNode.y - minY) * 120 + 60;
             const y1 = (currentNode.x - minX) * 80 + 40;
-            const x2 = (nextNode.y - minY) * 100 + 50;
+            const x2 = (nextNode.y - minY) * 120 + 60;
             const y2 = (nextNode.x - minX) * 80 + 40;
+            
+            // 检查是否可以连接（基于解锁状态）
+            const canConnect = totalPoints >= currentNode.requiredPoints;
             
             connections.push(
               <line
@@ -281,27 +285,108 @@ function TalentTreeGrid({
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                stroke={totalPoints >= currentNode.requiredPoints ? '#2a2a4a' : '#111'}
+                stroke={canConnect ? '#3a3a5a' : '#111'}
                 strokeWidth={2}
-                strokeOpacity={totalPoints >= currentNode.requiredPoints ? 0.6 : 0.2}
+                strokeOpacity={canConnect ? 0.8 : 0.2}
+                strokeLinecap="round"
               />
             );
           }
         });
       });
     }
+    
+    // 2. 连接同层级的节点（辅助连接）
+    for (let y = minY; y <= maxY; y++) {
+      const currentTier = nodes.filter(n => n.y === y).sort((a, b) => a.x - b.x);
+      
+      for (let i = 0; i < currentTier.length - 1; i++) {
+        const node1 = currentTier[i];
+        const node2 = currentTier[i + 1];
+        
+        // 只连接相邻的节点
+        if (Math.abs(node1.x - node2.x) === 1) {
+          const x1 = (node1.y - minY) * 120 + 60;
+          const y1 = (node1.x - minX) * 80 + 40;
+          const x2 = (node2.y - minY) * 120 + 60;
+          const y2 = (node2.x - minX) * 80 + 40;
+          
+          // 检查是否可以连接（基于解锁状态）
+          const canConnect = totalPoints >= Math.min(node1.requiredPoints, node2.requiredPoints);
+          
+          connections.push(
+            <line
+              key={`${node1.id}-${node2.id}-same-tier`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={canConnect ? '#2a2a4a' : '#111'}
+              strokeWidth={1}
+              strokeOpacity={canConnect ? 0.4 : 0.1}
+              strokeDasharray="4,2"
+            />
+          );
+        }
+      }
+    }
+    
     return connections;
+  };
+
+  // 生成层级标签
+  const renderTierLabels = () => {
+    const labels = [];
+    const tiers = new Set(nodes.map(n => n.requiredPoints));
+    
+    tiers.forEach(tier => {
+      const tierNodes = nodes.filter(n => n.requiredPoints === tier);
+      if (tierNodes.length > 0) {
+        // 找到该层级的中心位置
+        const minTierY = Math.min(...tierNodes.map(n => n.y));
+        const maxTierY = Math.max(...tierNodes.map(n => n.y));
+        const centerY = (minTierY + maxTierY) / 2;
+        
+        const x = (centerY - minY) * 120 + 60;
+        const y = -20;
+        
+        labels.push(
+          <text 
+            key={`tier-${tier}`}
+            x={x} 
+            y={y} 
+            textAnchor="middle" 
+            className="text-[10px] font-mono font-bold text-[#a0a0b0]"
+          >
+            第 {tier} 层
+          </text>
+        );
+      }
+    });
+    
+    return labels;
   };
 
   return (
     <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-lg p-4">
       {/* 天赋树网格 */}
-      <div className="relative overflow-x-auto" style={{ minHeight: '300px' }}>
+      <div className="relative overflow-x-auto overflow-y-hidden" style={{ minHeight: '400px', maxHeight: '600px' }}>
         <svg 
-          width={gridWidth + 100} 
-          height={gridHeight + 80}
+          width={gridWidth + 200} 
+          height={gridHeight + 120}
           className="block"
         >
+          {/* 背景网格 */}
+          <defs>
+            <pattern id="grid" width="120" height="80" patternUnits="userSpaceOnUse">
+              <path d="M 120 0 L 0 0 0 80" fill="none" stroke="#1a1a3a" strokeWidth="0.5" opacity="0.3" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+          
+          {/* 层级标签 */}
+          {renderTierLabels()}
+          
           {/* 连接线 */}
           {renderConnections()}
           
@@ -313,7 +398,7 @@ function TalentTreeGrid({
             const colorClass = getNodeClasses(node, isActive, isLocked);
             
             // 横向布局：交换 X 和 Y 轴
-            const x = (node.y - minY) * 100 + 50;
+            const x = (node.y - minY) * 120 + 60;
             const y = (node.x - minX) * 80 + 40;
             
             return (
@@ -325,11 +410,19 @@ function TalentTreeGrid({
                   height="50"
                 >
                   <div 
-                    className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all select-none ${colorClass}`}
+                    className={`${sizeClass} border-2 flex items-center justify-center cursor-pointer transition-all duration-200 select-none ${colorClass}`}
                     onClick={() => onLeftClick(node, board)}
                     onContextMenu={e => onRightClick(e, node)}
                     onMouseEnter={() => setHoveredNode(node.id)}
                     onMouseLeave={() => setHoveredNode(null)}
+                    style={{
+                      transform: isHovered === node.id ? 'scale(1.1)' : 'scale(1)',
+                      boxShadow: isActive ? 
+                        node.nodeType === 'micro' ? '0 0 10px rgba(59, 130, 246, 0.5)' :
+                        node.nodeType === 'medium' ? '0 0 12px rgba(168, 85, 247, 0.5)' :
+                        '0 0 14px rgba(245, 158, 11, 0.5)' : 
+                        'none'
+                    }}
                   >
                     <span className="text-xs font-bold font-mono text-white leading-none">
                       {isActive ? getNodePoints(node.id) : ''}
@@ -346,18 +439,6 @@ function TalentTreeGrid({
                 >
                   {getNodePoints(node.id)}/{node.maxPoints}
                 </text>
-                
-                {/* 层级标签 */}
-                {node.y === minY && (
-                  <text 
-                    x={x} 
-                    y={y - 30} 
-                    textAnchor="middle" 
-                    className="text-[10px] font-mono text-[#a0a0b0]"
-                  >
-                    {node.requiredPoints}点
-                  </text>
-                )}
               </g>
             );
           })}
@@ -365,18 +446,18 @@ function TalentTreeGrid({
       </div>
 
       {/* 图例 */}
-      <div className="flex flex-wrap gap-4 pt-4 text-xs text-[#a0a0b0] border-t border-[#2a2a4a]">
+      <div className="flex flex-wrap gap-6 pt-4 text-xs text-[#a0a0b0] border-t border-[#2a2a4a]">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-blue-500" />
-          <span>基础 (3点)</span>
+          <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-500/30" />
+          <span>微型天赋 (3点)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-purple-500" />
-          <span>进阶</span>
+          <div className="w-3 h-3 rounded-sm bg-purple-500 shadow-sm shadow-purple-500/30" />
+          <span>中型天赋</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-amber-500" />
-          <span>神格 (1点)</span>
+          <div className="w-3 h-3 rounded-sm bg-amber-500 shadow-sm shadow-amber-500/30" />
+          <span>大型天赋 (1点)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#111] border border-[#222] opacity-40" />
