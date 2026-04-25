@@ -41,6 +41,7 @@ export interface DmgRange {
 export interface Affix {
   id: string;
   name: string;
+  nameCN: string;
   text: string;              // 原始文本（如"+12% 攻击伤害"）
   affixType: AffixType;
   tier: number;              // T0-T6
@@ -80,6 +81,16 @@ export interface GearInstance {
   quality?: number;          // 品质
   enchantMods?: Mod[];       // 赋魔属性
   corruptionMods?: Mod[];    // 侵蚀属性
+  setId?: string;            // 套装ID
+}
+
+// 套装效果
+export interface SetBonus {
+  setId: string;
+  name: string;
+  nameCN: string;
+  piecesRequired: number;
+  mods: Mod[];
 }
 
 // 装备栏位配置

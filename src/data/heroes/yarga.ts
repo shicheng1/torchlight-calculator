@@ -122,7 +122,9 @@ export const yargaData: HeroData = {
         {
           level: 1,
           description: '-50点时空能量消耗直接获得时空幻象。幻象每1.5秒使用一次核心技能',
-          mods: [] as Mod[],
+          mods: [
+            { type: 'MinionCount', value: 1, src: 'hero_trait', srcDetail: '时空幻象' } as Mod,
+          ],
         },
         {
           level: 45,

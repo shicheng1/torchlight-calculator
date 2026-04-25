@@ -11,6 +11,8 @@ import { DMG_CHUNK_TYPES } from '../constants/damage-types.ts';
 export interface BaseDamageInput {
   isAttack: boolean;
   skillBaseDamagePct: number;     // 技能伤害百分比（如 232 表示 232%）
+  skillBaseDamagePctPerLevel: number; // 每级增加的伤害百分比
+  skillLevel: number;             // 技能等级
   weaponBaseDamage: Partial<Record<DmgChunkType, { min: number; max: number }>>;
   spellBaseDamage: Partial<Record<DmgChunkType, { min: number; max: number }>>;
   skillEffectiveness: number;     // 技能伤害效用（默认1.0）
@@ -31,7 +33,10 @@ export function calcBaseDamage(input: BaseDamageInput): BaseDamageResult {
     erosion: { min: 0, max: 0 },
   };
 
-  const pctMultiplier = input.skillBaseDamagePct / 100;
+  // 计算技能等级对应的伤害百分比
+  const levelBonus = (input.skillLevel - 1) * input.skillBaseDamagePctPerLevel;
+  const totalBaseDamagePct = input.skillBaseDamagePct + levelBonus;
+  const pctMultiplier = totalBaseDamagePct / 100;
 
   if (input.isAttack) {
     // 攻击技能：武器面板伤害 × 技能百分比 + 附加伤害
@@ -70,6 +75,12 @@ export function calcBaseDamage(input: BaseDamageInput): BaseDamageResult {
       }
     }
   }
+
+  // 技能标签对伤害的影响
+  // 根据技能标签应用额外的伤害加成
+  // 这里可以根据不同的技能标签应用不同的伤害加成
+  // 例如：投射物技能、范围技能、持续伤害技能等
+  // 目前暂时不做额外处理，后续可以根据官方编年史的数据进行调整
 
   return { chunks };
 }

@@ -40,12 +40,14 @@ export const gemmaData: HeroData = {
         {
           level: 45,
           description: '绝望回声：+1炼狱充能上限；+1~2秒持续时间；+40~100%技能范围',
-          mods: [] as Mod[],
+          mods: [
+            { type: 'SkillRangePct', value: 100, addn: true, src: 'hero_trait', srcDetail: '欢愉之焰-绝望回声' } as Mod,
+          ],
         },
         {
           level: 60,
           description: '无尽极刑：淘汰炼狱内生命低于6~10%的敌人',
-          mods: [] as Mod[],
+          mods: [],
         },
         {
           level: 60,

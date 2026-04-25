@@ -8,6 +8,7 @@ import { getSlate } from '@/data/slate/index.ts';
 import { getHeroMemory } from '@/data/hero-memory/index.ts';
 import { getPactspirit } from '@/data/pactspirit/index.ts';
 import { getHero } from '@/data/heroes/index.ts';
+import { getGearBase, getSetBonuses } from '@/data/gear/index.ts';
 
 /**
  * 从完整的 BD 配置（Loadout）中收集所有 Mod
@@ -65,11 +66,22 @@ function collectFromGear(gear: Loadout['gear'], mods: Mod[]): void {
     gear.neck, gear.ring1, gear.ring2, gear.belt,
   ];
 
+  // 统计套装数量
+  const setCounts = new Map<string, number>();
+
   for (const instance of instances) {
     if (!instance) continue;
 
     // 收集基底隐含属性
-    // TODO: 从 gearBase 数据查找 implicitMods
+    const gearBase = getGearBase(instance.baseId);
+    if (gearBase) {
+      // 收集基底隐含属性
+      mods.push(...gearBase.implicitMods);
+      // 收集基底基础属性
+      for (const statLine of gearBase.baseStats) {
+        mods.push(...statLine.mods);
+      }
+    }
 
     // 收集词缀属性
     for (const affix of instance.affixes) {
@@ -84,6 +96,21 @@ function collectFromGear(gear: Loadout['gear'], mods: Mod[]): void {
     // 收集侵蚀属性
     if (instance.corruptionMods) {
       mods.push(...instance.corruptionMods);
+    }
+
+    // 统计套装数量
+    if (instance.setId) {
+      setCounts.set(instance.setId, (setCounts.get(instance.setId) || 0) + 1);
+    }
+  }
+
+  // 计算套装效果
+  for (const [setId, count] of setCounts.entries()) {
+    const setBonuses = getSetBonuses(setId);
+    for (const bonus of setBonuses) {
+      if (count >= bonus.piecesRequired) {
+        mods.push(...bonus.mods);
+      }
     }
   }
 }

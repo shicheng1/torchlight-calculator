@@ -441,6 +441,17 @@ export interface EnemyDmgTakenMod {
   srcDetail?: string;
 }
 
+// 技能范围加成
+export interface SkillRangePctMod {
+  type: 'SkillRangePct';
+  value: number;
+  addn: boolean;
+  per?: PerStackable;
+  cond?: Condition;
+  src?: ModSource;
+  srcDetail?: string;
+}
+
 // 所有 Mod 的联合类型
 export type Mod =
   | DmgPctMod
@@ -474,4 +485,5 @@ export type Mod =
   | ExplodeDmgPctMod
   | ConsecutiveAtkChanceMod
   | EnemyDmgTakenMod
+  | SkillRangePctMod
   | StatMod;

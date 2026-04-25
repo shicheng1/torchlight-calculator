@@ -62,9 +62,15 @@ function calculateNormalPipeline(
   skillData: ReturnType<typeof getSkill>,
 ): CalculationResult {
   // 基础伤害
+  // 获取当前技能配置
+  const skillGroup = _loadout.skillGroups[_loadout.selectedSkillGroupIndex];
+  const skillConfig = skillGroup?.activeSkill;
+  
   const baseResult = calcBaseDamage({
     isAttack,
     skillBaseDamagePct: skillData?.baseDamagePct ?? 100,
+    skillBaseDamagePctPerLevel: skillData?.baseDamagePctPerLevel ?? 0,
+    skillLevel: skillConfig?.level ?? 1,
     weaponBaseDamage: {} as Partial<Record<DmgChunkType, { min: number; max: number }>>,    // TODO: 从 gearBase 获取
     spellBaseDamage: (skillData?.baseDamage ?? {}) as Partial<Record<DmgChunkType, { min: number; max: number }>>,
     skillEffectiveness: 1.0,

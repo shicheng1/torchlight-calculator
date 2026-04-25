@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useCalculation } from '@/hooks/useCalculation.ts';
 import { useUIStore } from '@/stores/ui-store.ts';
 import { formatDPS, formatPercent, formatMultiplier } from '@/utils/format.ts';
-import { DMG_TYPE_COLORS, DMG_TYPE_NAMES, DMG_MOD_TYPE_NAMES } from '@/engine/constants/damage-types.ts';
+import { DMG_TYPE_COLORS, DMG_TYPE_NAMES, DMG_MOD_TYPE_NAMES, DMG_CHUNK_TYPES } from '@/engine/constants/damage-types.ts';
 import type { DmgChunkType, DmgModType } from '@/engine/types/mod.ts';
 
 export function DamageBreakdown() {
@@ -22,6 +22,9 @@ export function DamageBreakdown() {
 
       {show && (
         <div className="mt-3 space-y-3">
+          {/* 伤害类型构成分析 */}
+          <DamageTypeSection />
+
           {/* INC 增伤来源 */}
           <IncBreakdownSection />
 
