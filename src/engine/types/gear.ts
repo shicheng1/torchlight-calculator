@@ -79,18 +79,9 @@ export interface GearInstance {
   rarity: GearRarity;
   affixes: Affix[];          // 已装备的词缀
   quality?: number;          // 品质
+  setId?: string;            // 套装ID
   enchantMods?: Mod[];       // 赋魔属性
   corruptionMods?: Mod[];    // 侵蚀属性
-  setId?: string;            // 套装ID
-}
-
-// 套装效果
-export interface SetBonus {
-  setId: string;
-  name: string;
-  nameCN: string;
-  piecesRequired: number;
-  mods: Mod[];
 }
 
 // 装备栏位配置

@@ -1,4 +1,4 @@
-import type { Mod } from '../types/mod.ts';
+import type { Mod, DmgPctMod, FlatDmgToAtksMod, FlatDmgToSpellsMod, MinionDmgPctMod, MinionFlatDmgMod, MinionAspdPctMod, MinionCountMod, CritRatingPctMod, FlatCritRatingMod, CritDmgPctMod, AspdPctMod, CspdPctMod, ConvertDmgPctMod, ResPenPctMod, ArmorPenPctMod, DoubleDmgChanceMod, OverloadPctMod, ExplodeDmgPctMod, StatMod, AilmentChancePctMod, AilmentDurationPctMod, AilmentEffectPctMod } from '../types/mod.ts';
 import type { AggregatedMods } from '../types/calc.ts';
 import { MINION_BASE_CRIT_RATING } from '../constants/defaults.ts';
 
@@ -13,193 +13,273 @@ export function aggregateMods(mods: Mod[]): AggregatedMods {
   for (const mod of mods) {
     switch (mod.type) {
       // ===== 伤害百分比 =====
-      case 'DmgPct':
-        if (mod.addn) {
+      case 'DmgPct': {
+        const dmgMod = mod as DmgPctMod;
+        if (dmgMod.addn) {
           // More 类：独立保留
           result.moreDmg.push({
-            value: mod.value,
-            modType: mod.dmgModType,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: dmgMod.value,
+            modType: dmgMod.dmgModType,
+            src: dmgMod.srcDetail ?? dmgMod.src ?? 'unknown',
           });
         } else {
           // INC 类：同类相加
-          result.incDmg[mod.dmgModType] = (result.incDmg[mod.dmgModType] ?? 0) + mod.value;
+          result.incDmg[dmgMod.dmgModType] = (result.incDmg[dmgMod.dmgModType] ?? 0) + dmgMod.value;
         }
         break;
+      }
 
       // ===== 攻击附加点伤 =====
-      case 'FlatDmgToAtks':
-        if (!result.flatDmgToAtks[mod.dmgType]) {
-          result.flatDmgToAtks[mod.dmgType] = { min: 0, max: 0 };
+      case 'FlatDmgToAtks': {
+        const flatMod = mod as FlatDmgToAtksMod;
+        if (!result.flatDmgToAtks[flatMod.dmgType]) {
+          result.flatDmgToAtks[flatMod.dmgType] = { min: 0, max: 0 };
         }
-        result.flatDmgToAtks[mod.dmgType]!.min += mod.value.min;
-        result.flatDmgToAtks[mod.dmgType]!.max += mod.value.max;
+        result.flatDmgToAtks[flatMod.dmgType]!.min += flatMod.value.min;
+        result.flatDmgToAtks[flatMod.dmgType]!.max += flatMod.value.max;
         break;
+      }
 
       // ===== 法术附加点伤 =====
-      case 'FlatDmgToSpells':
-        if (!result.flatDmgToSpells[mod.dmgType]) {
-          result.flatDmgToSpells[mod.dmgType] = { min: 0, max: 0 };
+      case 'FlatDmgToSpells': {
+        const flatMod = mod as FlatDmgToSpellsMod;
+        if (!result.flatDmgToSpells[flatMod.dmgType]) {
+          result.flatDmgToSpells[flatMod.dmgType] = { min: 0, max: 0 };
         }
-        result.flatDmgToSpells[mod.dmgType]!.min += mod.value.min;
-        result.flatDmgToSpells[mod.dmgType]!.max += mod.value.max;
+        result.flatDmgToSpells[flatMod.dmgType]!.min += flatMod.value.min;
+        result.flatDmgToSpells[flatMod.dmgType]!.max += flatMod.value.max;
         break;
+      }
 
       // ===== 召唤物伤害 =====
-      case 'MinionDmgPct':
-        if (mod.addn) {
+      case 'MinionDmgPct': {
+        const minionMod = mod as MinionDmgPctMod;
+        if (minionMod.addn) {
           result.moreMinionDmg.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: minionMod.value,
+            src: minionMod.srcDetail ?? minionMod.src ?? 'unknown',
           });
         } else {
-          result.incMinionDmg += mod.value;
+          result.incMinionDmg += minionMod.value;
         }
         break;
+      }
 
       // ===== 召唤物附加点伤 =====
-      case 'MinionFlatDmg':
-        if (!result.flatMinionDmg[mod.dmgType]) {
-          result.flatMinionDmg[mod.dmgType] = { min: 0, max: 0 };
+      case 'MinionFlatDmg': {
+        const minionMod = mod as MinionFlatDmgMod;
+        if (!result.flatMinionDmg[minionMod.dmgType]) {
+          result.flatMinionDmg[minionMod.dmgType] = { min: 0, max: 0 };
         }
-        result.flatMinionDmg[mod.dmgType]!.min += mod.value.min;
-        result.flatMinionDmg[mod.dmgType]!.max += mod.value.max;
+        result.flatMinionDmg[minionMod.dmgType]!.min += minionMod.value.min;
+        result.flatMinionDmg[minionMod.dmgType]!.max += minionMod.value.max;
         break;
+      }
 
       // ===== 召唤物攻速 =====
-      case 'MinionAspdPct':
-        if (mod.addn) {
+      case 'MinionAspdPct': {
+        const minionMod = mod as MinionAspdPctMod;
+        if (minionMod.addn) {
           result.moreMinionAspd.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: minionMod.value,
+            src: minionMod.srcDetail ?? minionMod.src ?? 'unknown',
           });
         } else {
-          result.incMinionAspd += mod.value;
+          result.incMinionAspd += minionMod.value;
         }
         break;
+      }
 
       // ===== 召唤物数量 =====
-      case 'MinionCount':
-        result.minionCount += mod.value;
+      case 'MinionCount': {
+        const minionMod = mod as MinionCountMod;
+        result.minionCount += minionMod.value;
         break;
+      }
 
       // ===== 暴击值（百分比） =====
-      case 'CritRatingPct':
-        if (mod.addn) {
+      case 'CritRatingPct': {
+        const critMod = mod as CritRatingPctMod;
+        if (critMod.addn) {
           result.moreCritRating.push({
-            value: mod.value,
-            modType: mod.modType,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: critMod.value,
+            modType: critMod.modType,
+            src: critMod.srcDetail ?? critMod.src ?? 'unknown',
           });
         } else {
-          result.incCritRating[mod.modType] = (result.incCritRating[mod.modType] ?? 0) + mod.value;
+          result.incCritRating[critMod.modType] = (result.incCritRating[critMod.modType] ?? 0) + critMod.value;
         }
         break;
+      }
 
       // ===== 暴击值（固定值） =====
-      case 'FlatCritRating':
-        // 固定暴击值直接加到 INC 中（等效于百分比加成的基础值）
-        result.incCritRating[mod.modType] = (result.incCritRating[mod.modType] ?? 0) + mod.value;
+      case 'FlatCritRating': {
+        const critMod = mod as FlatCritRatingMod;
+        result.flatCritRating[critMod.modType] = (result.flatCritRating[critMod.modType] ?? 0) + critMod.value;
         break;
+      }
 
       // ===== 暴击伤害 =====
-      case 'CritDmgPct':
-        if (mod.addn) {
+      case 'CritDmgPct': {
+        const critMod = mod as CritDmgPctMod;
+        if (critMod.addn) {
           result.moreCritDmg.push({
-            value: mod.value,
-            modType: mod.modType,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: critMod.value,
+            modType: critMod.modType,
+            src: critMod.srcDetail ?? critMod.src ?? 'unknown',
           });
         } else {
-          result.incCritDmg[mod.modType] = (result.incCritDmg[mod.modType] ?? 0) + mod.value;
+          result.incCritDmg[critMod.modType] = (result.incCritDmg[critMod.modType] ?? 0) + critMod.value;
         }
         break;
+      }
 
       // ===== 攻击速度 =====
-      case 'AspdPct':
-        if (mod.addn) {
+      case 'AspdPct': {
+        const aspdMod = mod as AspdPctMod;
+        if (aspdMod.addn) {
           result.moreAspd.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: aspdMod.value,
+            src: aspdMod.srcDetail ?? aspdMod.src ?? 'unknown',
           });
         } else {
-          result.incAspd += mod.value;
+          result.incAspd += aspdMod.value;
         }
         break;
+      }
 
       // ===== 施法速度 =====
-      case 'CspdPct':
-        if (mod.addn) {
+      case 'CspdPct': {
+        const cspdMod = mod as CspdPctMod;
+        if (cspdMod.addn) {
           result.moreCspd.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: cspdMod.value,
+            src: cspdMod.srcDetail ?? cspdMod.src ?? 'unknown',
           });
         } else {
-          result.incCspd += mod.value;
+          result.incCspd += cspdMod.value;
         }
         break;
+      }
 
       // ===== 伤害转化 =====
-      case 'ConvertDmgPct':
+      case 'ConvertDmgPct': {
+        const convertMod = mod as ConvertDmgPctMod;
         result.convertDmg.push({
-          from: mod.from,
-          to: mod.to,
-          value: mod.value,
+          from: convertMod.from,
+          to: convertMod.to,
+          value: convertMod.value,
         });
         break;
+      }
 
       // ===== 抗性穿透 =====
-      case 'ResPenPct':
-        result.resPen[mod.penType] = (result.resPen[mod.penType] ?? 0) + mod.value;
+      case 'ResPenPct': {
+        const penMod = mod as ResPenPctMod;
+        result.resPen[penMod.penType] = (result.resPen[penMod.penType] ?? 0) + penMod.value;
         break;
+      }
 
       // ===== 护甲穿透 =====
-      case 'ArmorPenPct':
-        result.armorPen += mod.value;
+      case 'ArmorPenPct': {
+        const penMod = mod as ArmorPenPctMod;
+        result.armorPen += penMod.value;
         break;
+      }
 
       // ===== 双倍伤害 =====
-      case 'DoubleDmgChancePct':
-        if (mod.addn) {
-          // More 类双倍伤害暂时简化处理
-          result.doubleDmgChance += mod.value;
-        } else {
-          result.doubleDmgChance += mod.value;
-        }
+      case 'DoubleDmgChancePct': {
+        const doubleMod = mod as DoubleDmgChanceMod;
+        result.doubleDmgChance += doubleMod.value;
         break;
+      }
 
       // ===== 超载 =====
-      case 'OverloadPct':
-        if (mod.addn) {
+      case 'OverloadPct': {
+        const overloadMod = mod as OverloadPctMod;
+        if (overloadMod.addn) {
           result.overloadMore.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: overloadMod.value,
+            src: overloadMod.srcDetail ?? overloadMod.src ?? 'unknown',
           });
         } else {
-          result.overloadInc += mod.value;
+          result.overloadInc += overloadMod.value;
         }
         break;
+      }
 
       // ===== 自爆 =====
-      case 'ExplodeDmgPct':
-        if (mod.addn) {
+      case 'ExplodeDmgPct': {
+        const explodeMod = mod as ExplodeDmgPctMod;
+        if (explodeMod.addn) {
           result.explodeMore.push({
-            value: mod.value,
-            src: mod.srcDetail ?? mod.src ?? 'unknown',
+            value: explodeMod.value,
+            src: explodeMod.srcDetail ?? explodeMod.src ?? 'unknown',
           });
         } else {
-          result.explodeInc += mod.value;
+          result.explodeInc += explodeMod.value;
         }
         break;
+      }
 
       // ===== 主属性 =====
-      case 'Stat':
-        switch (mod.stat) {
-          case 'str': result.totalStr += mod.value; break;
-          case 'dex': result.totalDex += mod.value; break;
-          case 'int': result.totalInt += mod.value; break;
+      case 'Stat': {
+        const statMod = mod as StatMod;
+        switch (statMod.stat) {
+          case 'str': result.totalStr += statMod.value; break;
+          case 'dex': result.totalDex += statMod.value; break;
+          case 'int': result.totalInt += statMod.value; break;
         }
         break;
+      }
+
+      // ===== 异常状态触发几率 =====
+      case 'AilmentChancePct': {
+        const ailmentMod = mod as AilmentChancePctMod;
+        const ailmentType = ailmentMod.ailmentType || 'all';
+        if (ailmentMod.addn) {
+          result.moreAilmentChance.push({
+            value: ailmentMod.value,
+            ailmentType,
+            src: ailmentMod.srcDetail ?? ailmentMod.src ?? 'unknown',
+          });
+        } else {
+          result.incAilmentChance[ailmentType] = (result.incAilmentChance[ailmentType] ?? 0) + ailmentMod.value;
+        }
+        break;
+      }
+
+      // ===== 异常状态持续时间 =====
+      case 'AilmentDurationPct': {
+        const ailmentMod = mod as AilmentDurationPctMod;
+        const ailmentType = ailmentMod.ailmentType || 'all';
+        if (ailmentMod.addn) {
+          result.moreAilmentDuration.push({
+            value: ailmentMod.value,
+            ailmentType,
+            src: ailmentMod.srcDetail ?? ailmentMod.src ?? 'unknown',
+          });
+        } else {
+          result.incAilmentDuration[ailmentType] = (result.incAilmentDuration[ailmentType] ?? 0) + ailmentMod.value;
+        }
+        break;
+      }
+
+      // ===== 异常状态效果 =====
+      case 'AilmentEffectPct': {
+        const ailmentMod = mod as AilmentEffectPctMod;
+        const ailmentType = ailmentMod.ailmentType || 'all';
+        if (ailmentMod.addn) {
+          result.moreAilmentEffect.push({
+            value: ailmentMod.value,
+            ailmentType,
+            src: ailmentMod.srcDetail ?? ailmentMod.src ?? 'unknown',
+          });
+        } else {
+          result.incAilmentEffect[ailmentType] = (result.incAilmentEffect[ailmentType] ?? 0) + ailmentMod.value;
+        }
+        break;
+      }
     }
   }
 
@@ -215,6 +295,7 @@ function createEmptyAggregatedMods(): AggregatedMods {
     incCritDmg: {},
     incMinionDmg: 0,
     incMinionAspd: 0,
+    flatCritRating: {},
 
     moreDmg: [],
     moreAspd: [],
@@ -245,5 +326,13 @@ function createEmptyAggregatedMods(): AggregatedMods {
     totalStr: 0,
     totalDex: 0,
     totalInt: 0,
+
+    // 异常状态
+    incAilmentChance: {},
+    moreAilmentChance: [],
+    incAilmentDuration: {},
+    moreAilmentDuration: [],
+    incAilmentEffect: {},
+    moreAilmentEffect: [],
   };
 }

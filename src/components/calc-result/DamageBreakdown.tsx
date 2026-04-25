@@ -4,6 +4,16 @@ import { useUIStore } from '@/stores/ui-store.ts';
 import { formatDPS, formatPercent, formatMultiplier } from '@/utils/format.ts';
 import { DMG_TYPE_COLORS, DMG_TYPE_NAMES, DMG_MOD_TYPE_NAMES, DMG_CHUNK_TYPES } from '@/engine/constants/damage-types.ts';
 import type { DmgChunkType, DmgModType } from '@/engine/types/mod.ts';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+// 注册Chart.js组件
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export function DamageBreakdown() {
   const result = useCalculation();
@@ -279,6 +289,120 @@ function MinionSection() {
           <div className="flex justify-between pt-1 border-t border-[#3a3a5a]">
             <span className="text-[#eaeaea]">总召唤物DPS</span>
             <span className="font-mono text-[#e94560]">{formatDPS(detail.totalMinionDPS)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DamageTypeSection() {
+  const result = useCalculation();
+  const [expanded, setExpanded] = useState(true);
+
+  // 计算各伤害类型的总伤害
+  const damageByType = DMG_CHUNK_TYPES.map(type => {
+    const detail = result.damageBreakdown[type];
+    return {
+      type,
+      name: DMG_TYPE_NAMES[type],
+      color: DMG_TYPE_COLORS[type],
+      damage: detail?.afterResist || 0,
+      percentage: 0 // 稍后计算
+    };
+  }).filter(item => item.damage > 0);
+
+  // 计算总伤害
+  const totalDamage = damageByType.reduce((sum, item) => sum + item.damage, 0);
+
+  // 计算百分比
+  const damageWithPercentage = damageByType.map(item => ({
+    ...item,
+    percentage: totalDamage > 0 ? (item.damage / totalDamage) * 100 : 0
+  }));
+
+  // 准备图表数据
+  const chartData = {
+    labels: damageWithPercentage.map(item => item.name),
+    datasets: [
+      {
+        data: damageWithPercentage.map(item => item.damage),
+        backgroundColor: damageWithPercentage.map(item => item.color),
+        borderColor: damageWithPercentage.map(item => item.color),
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // 图表配置
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: {
+          color: '#a0a0a0',
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.raw as number;
+            const percentage = ((value / totalDamage) * 100).toFixed(1);
+            return `${label}: ${formatDPS(value)} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="text-xs">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full font-medium text-[#eaeaea] mb-1"
+      >
+        <span>伤害类型构成分析</span>
+        <span className="text-[#a0a0a0]">{expanded ? '-' : '+'}</span>
+      </button>
+      {expanded && (
+        <div className="space-y-3">
+          {/* 伤害构成图表 */}
+          <div className="h-48 w-full">
+            {damageWithPercentage.length > 0 ? (
+              <Pie data={chartData} options={chartOptions} />
+            ) : (
+              <div className="h-full flex items-center justify-center text-[#a0a0a0]">
+                无伤害数据
+              </div>
+            )}
+          </div>
+
+          {/* 详细数据列表 */}
+          <div className="space-y-1 pl-2">
+            {damageWithPercentage.map((item, index) => (
+              <div key={index} className="flex justify-between">
+                <span style={{ color: item.color }}>
+                  {item.name}
+                </span>
+                <span className="font-mono text-[#eaeaea]">
+                  {formatDPS(item.damage)} ({item.percentage.toFixed(1)}%)
+                </span>
+              </div>
+            ))}
+            {damageWithPercentage.length > 0 && (
+              <div className="flex justify-between pt-1 border-t border-[#3a3a5a]">
+                <span className="text-[#eaeaea]">总伤害</span>
+                <span className="font-mono text-[#e94560]">
+                  {formatDPS(totalDamage)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}

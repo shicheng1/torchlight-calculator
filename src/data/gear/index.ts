@@ -1,7 +1,8 @@
-import type { GearBase, Affix, SetBonus } from '@/engine/types/gear.ts';
+import type { GearBase, Affix } from '@/engine/types/gear.ts';
+import { dataService } from '@/data/sync/data-adapter.ts';
 
 // 装备基底数据
-export const gearBases: GearBase[] = [
+const localGearBases: GearBase[] = [
   // 武器
   {
     id: 'sword_1h',
@@ -120,7 +121,7 @@ export const gearBases: GearBase[] = [
 ];
 
 // 装备词缀数据
-export const affixes: Affix[] = [
+const localAffixes: Affix[] = [
   // 前缀
   {
     id: 'affix_phys_dmg_1',
@@ -221,87 +222,7 @@ export const affixes: Affix[] = [
   }
 ];
 
-// 套装效果数据
-export const setBonuses: SetBonus[] = [
-  {
-    setId: 'set_warrior',
-    name: 'Warrior Set',
-    nameCN: '战士套装',
-    piecesRequired: 2,
-    mods: [
-      {
-        type: 'DmgPct',
-        value: 15,
-        dmgModType: 'melee',
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Warrior Set 2-piece'
-      }
-    ]
-  },
-  {
-    setId: 'set_warrior',
-    name: 'Warrior Set',
-    nameCN: '战士套装',
-    piecesRequired: 4,
-    mods: [
-      {
-        type: 'DmgPct',
-        value: 25,
-        dmgModType: 'melee',
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Warrior Set 4-piece'
-      },
-      {
-        type: 'AspdPct',
-        value: 10,
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Warrior Set 4-piece'
-      }
-    ]
-  },
-  {
-    setId: 'set_mage',
-    name: 'Mage Set',
-    nameCN: '法师套装',
-    piecesRequired: 2,
-    mods: [
-      {
-        type: 'DmgPct',
-        value: 15,
-        dmgModType: 'spell',
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Mage Set 2-piece'
-      }
-    ]
-  },
-  {
-    setId: 'set_mage',
-    name: 'Mage Set',
-    nameCN: '法师套装',
-    piecesRequired: 4,
-    mods: [
-      {
-        type: 'DmgPct',
-        value: 25,
-        dmgModType: 'spell',
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Mage Set 4-piece'
-      },
-      {
-        type: 'CspdPct',
-        value: 10,
-        addn: false,
-        src: 'gear_legendary',
-        srcDetail: 'Mage Set 4-piece'
-      }
-    ]
-  }
-];
+
 
 // 获取装备基底
 export function getGearBase(baseId: string): GearBase | undefined {
@@ -313,10 +234,10 @@ export function getAffix(affixId: string): Affix | undefined {
   return affixes.find(affix => affix.id === affixId);
 }
 
-// 获取套装效果
-export function getSetBonuses(setId: string): SetBonus[] {
-  return setBonuses.filter(set => set.setId === setId);
-}
+// 从数据服务获取装备数据（优先使用同步数据）
+const syncGearData = dataService.getGear();
+export const gearBases: GearBase[] = syncGearData?.bases || localGearBases;
+export const affixes: Affix[] = syncGearData?.affixes || localAffixes;
 
 // 根据装备部位获取可用的装备基底
 export function getGearBasesBySlot(slot: string): GearBase[] {

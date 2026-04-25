@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBuildStore } from '@/stores/build-store.ts';
 import type { EquipmentSlot, GearInstance, Affix } from '@/engine/types/gear.ts';
 import { affixes, getGearBasesBySlot } from '@/data/gear/index.ts';
+import { Tooltip } from '@/components/common/Tooltip.tsx';
 
 interface GearEditorProps {
   slot: EquipmentSlot;
@@ -64,7 +65,9 @@ export function GearEditor({ slot, gear, onClose }: GearEditorProps) {
 
         {/* 装备基底选择 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">装备基底</label>
+          <Tooltip title="选择装备的基础类型，不同基底提供不同的基础属性">
+            <label className="block text-sm font-medium mb-2">装备基底</label>
+          </Tooltip>
           <select
             value={baseId}
             onChange={(e) => setBaseId(e.target.value)}
@@ -81,7 +84,9 @@ export function GearEditor({ slot, gear, onClose }: GearEditorProps) {
 
         {/* 套装选择 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">套装</label>
+          <Tooltip title="选择装备所属的套装，套装装备会提供额外的套装效果">
+            <label className="block text-sm font-medium mb-2">套装</label>
+          </Tooltip>
           <select
             value={setId}
             onChange={(e) => setSetId(e.target.value)}
@@ -95,7 +100,9 @@ export function GearEditor({ slot, gear, onClose }: GearEditorProps) {
 
         {/* 品质 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">品质: {quality}%</label>
+          <Tooltip title="品质会提升装备的基础属性，最高为20%">
+            <label className="block text-sm font-medium mb-2">品质: {quality}%</label>
+          </Tooltip>
           <input
             type="range"
             min="0"
@@ -109,9 +116,11 @@ export function GearEditor({ slot, gear, onClose }: GearEditorProps) {
         {/* 词缀选择 */}
         {selectedBase && (
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">
-              词缀 ({affixIds.length}/{selectedBase.maxPrefixes + selectedBase.maxSuffixes})
-            </label>
+            <Tooltip title="选择装备的词缀，不同词缀提供不同的属性加成">
+              <label className="block text-sm font-medium mb-2">
+                词缀 ({affixIds.length}/{selectedBase.maxPrefixes + selectedBase.maxSuffixes})
+              </label>
+            </Tooltip>
             <div className="space-y-2">
               {availableAffixes.map(affix => (
                 <div key={affix.id} className="flex items-center">

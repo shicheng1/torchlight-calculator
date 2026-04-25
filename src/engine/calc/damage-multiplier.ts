@@ -82,16 +82,16 @@ export function isModTypeApplicable(
 /**
  * 应用 INC/More 乘区
  */
-export function applyDamageMultipliers(
+export async function applyDamageMultipliers(
   chunks: Record<DmgChunkType, number>,
   aggregated: AggregatedMods,
   skillTags: SkillTag[],
   mainStatValue: number
-): {
+): Promise<{
   result: Record<DmgChunkType, number>;
   incBreakdown: IncSource[];
   moreBreakdown: MoreSource[];
-} {
+}> {
   const result = { ...chunks };
   const incBreakdown: IncSource[] = [];
   const moreBreakdown: MoreSource[] = [];
@@ -99,7 +99,8 @@ export function applyDamageMultipliers(
   // 主属性增伤（全域 INC）
   const mainStatInc = mainStatValue * MAIN_STAT_DAMAGE_PER_POINT;
 
-  for (const dmgType of DMG_CHUNK_TYPES) {
+  // 并行处理每种伤害类型
+  const processingPromises = DMG_CHUNK_TYPES.map(async (dmgType) => {
     // 收集所有适用的 INC 加成
     let totalInc = mainStatInc; // 主属性总是适用
 
@@ -114,33 +115,49 @@ export function applyDamageMultipliers(
       isModTypeApplicable(m.modType, dmgType, skillTags)
     );
 
+    // 计算结果
+    let damage = chunks[dmgType];
+    
     // 应用 INC
-    result[dmgType] *= (1 + totalInc / 100);
+    damage *= (1 + totalInc / 100);
 
     // 应用 More（每个独立相乘）
     for (const more of applicableMore) {
-      result[dmgType] *= (1 + more.value / 100);
-      moreBreakdown.push({
-        value: more.value,
-        modType: more.modType,
-        src: more.src,
-        detail: more.detail,
-      });
+      damage *= (1 + more.value / 100);
     }
 
-    // 记录 INC 明细
-    if (totalInc > 0) {
-      incBreakdown.push({
-        modType: dmgType as unknown as DmgModType,
-        total: totalInc,
-        sources: [
-          { value: mainStatInc, src: '主属性' },
-          ...Object.entries(aggregated.incDmg)
-            .filter(([mt, v]) => v && isModTypeApplicable(mt as DmgModType, dmgType, skillTags))
-            .map(([mt, v]) => ({ value: v!, src: mt })),
-        ],
-      });
+    // 准备明细数据
+    const incSource = totalInc > 0 ? {
+      modType: dmgType as unknown as DmgModType,
+      total: totalInc,
+      sources: [
+        { value: mainStatInc, src: '主属性' },
+        ...Object.entries(aggregated.incDmg)
+          .filter(([mt, v]) => v && isModTypeApplicable(mt as DmgModType, dmgType, skillTags))
+          .map(([mt, v]) => ({ value: v!, src: mt })),
+      ],
+    } : null;
+
+    const moreSources = applicableMore.map(more => ({
+      value: more.value,
+      modType: more.modType,
+      src: more.src,
+      detail: more.detail,
+    }));
+
+    return { dmgType, damage, incSource, moreSources };
+  });
+
+  // 等待所有计算完成
+  const processingResults = await Promise.all(processingPromises);
+  
+  // 收集结果
+  for (const { dmgType, damage, incSource, moreSources } of processingResults) {
+    result[dmgType] = damage;
+    if (incSource) {
+      incBreakdown.push(incSource);
     }
+    moreBreakdown.push(...moreSources);
   }
 
   return { result, incBreakdown, moreBreakdown };

@@ -1,4 +1,5 @@
 import type { Mod } from '@/engine/types/mod.ts';
+import { dataService } from '@/data/sync/data-adapter.ts';
 
 export interface PactspiritData {
   id: string;
@@ -11,7 +12,8 @@ export interface PactspiritData {
   stageEffects: { stage: number; description: string; mods: Mod[] }[];
 }
 
-export const pactspiritsData: Record<string, PactspiritData> = {
+// 本地备用数据
+const localPactspiritsData: Record<string, PactspiritData> = {
   // ==================== 雾蝎（攻击/传奇） ====================
   fog_scorpion: {
     id: 'fog_scorpion',
@@ -1224,6 +1226,9 @@ export const pactspiritsData: Record<string, PactspiritData> = {
     ],
   },
 };
+
+// 从数据服务获取契约精神数据（优先使用同步数据）
+export const pactspiritsData: Record<string, PactspiritData> = dataService.getPactspirit() || localPactspiritsData;
 
 export function getPactspirit(id: string): PactspiritData | undefined {
   return pactspiritsData[id];

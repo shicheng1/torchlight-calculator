@@ -1,6 +1,7 @@
 import type { DmgChunkType } from '../types/mod.ts';
-import type { CalculationResult, DamageDetail } from '../types/calc.ts';
+import type { CalculationResult, DamageDetail, AggregatedMods } from '../types/calc.ts';
 import { DMG_CHUNK_TYPES } from '../constants/damage-types.ts';
+import { calcAilmentDamage } from './ailment-calc.ts';
 
 /**
  * 汇总所有计算结果为最终的 CalculationResult
@@ -18,6 +19,7 @@ export function combineToDPS(params: {
   incBreakdown: CalculationResult['incBreakdown'];
   moreBreakdown: CalculationResult['moreBreakdown'];
   minionDetail?: CalculationResult['minionDetail'];
+  aggregated?: AggregatedMods;
 }): CalculationResult {
   const {
     totalHitDamage,
@@ -30,6 +32,7 @@ export function combineToDPS(params: {
     incBreakdown,
     moreBreakdown,
     minionDetail,
+    aggregated,
   } = params;
 
   // 双倍伤害期望
@@ -40,7 +43,26 @@ export function combineToDPS(params: {
   const finalExpectedDamage = totalHitDamage * expectedCritDamage * expectedDoubleDmg;
 
   // DPS
-  const totalDPS = finalExpectedDamage * attacksPerSecond;
+  const hitDPS = finalExpectedDamage * attacksPerSecond;
+
+  // 计算异常状态伤害
+  let ailmentDetail;
+  if (aggregated) {
+    // 构建敌人抗性对象
+    const enemyResistances: Record<DmgChunkType, number> = {
+      physical: 0, // 物理伤害通常不触发异常状态
+      fire: effectiveResistances.fire ?? 0,
+      cold: effectiveResistances.cold ?? 0,
+      lightning: effectiveResistances.lightning ?? 0,
+      erosion: effectiveResistances.erosion ?? 0,
+    };
+
+    // 计算异常状态
+    ailmentDetail = calcAilmentDamage(damageChunks, aggregated, enemyResistances);
+  }
+
+  // 总DPS = 击中DPS + DOT DPS
+  const totalDPS = hitDPS + (ailmentDetail?.totalDotDPS ?? 0);
 
   // 伤害分解
   const damageBreakdown: Record<DmgChunkType, DamageDetail> = {} as Record<DmgChunkType, DamageDetail>;
@@ -59,7 +81,7 @@ export function combineToDPS(params: {
 
   return {
     totalDPS,
-    hitDPS: totalDPS,
+    hitDPS,
     totalHitDamage: finalExpectedDamage,
     critChance: params.critChance,
     critMultiplier: params.critMultiplier,
@@ -73,5 +95,6 @@ export function combineToDPS(params: {
     effectiveResistances,
     armorMitigation,
     minionDetail,
+    ailmentDetail,
   };
 }

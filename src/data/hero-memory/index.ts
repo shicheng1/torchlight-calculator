@@ -1,4 +1,5 @@
 import type { Mod } from '@/engine/types/mod.ts';
+import { dataService } from '@/data/sync/data-adapter.ts';
 
 export interface HeroMemoryData {
   id: string;
@@ -15,7 +16,8 @@ export interface HeroMemoryData {
   }[];
 }
 
-export const heroMemoriesData: Record<string, HeroMemoryData> = {
+// 本地备用数据
+const localHeroMemoriesData: Record<string, HeroMemoryData> = {
   // ==================== 莫托-号令征召追忆 ====================
   moto_command_memory: {
     id: 'moto_command_memory',
@@ -221,6 +223,9 @@ export const heroMemoriesData: Record<string, HeroMemoryData> = {
     ],
   },
 };
+
+// 从数据服务获取英雄记忆数据（优先使用同步数据）
+export const heroMemoriesData: Record<string, HeroMemoryData> = dataService.getHeroMemory() || localHeroMemoriesData;
 
 export function getHeroMemory(id: string): HeroMemoryData | undefined {
   return heroMemoriesData[id];

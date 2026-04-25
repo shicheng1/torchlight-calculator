@@ -1,4 +1,5 @@
 import type { Mod } from '@/engine/types/mod.ts';
+import { dataService } from '@/data/sync/data-adapter.ts';
 
 export interface SlateAffixData {
   id: string;
@@ -23,7 +24,8 @@ export interface SlateData {
   mods: Mod[];
 }
 
-export const slatesData: Record<string, SlateData> = {
+// 本地备用数据
+const localSlatesData: Record<string, SlateData> = {
   // ==================== 巨力之神石板 ====================
   slate_force_god: {
     id: 'slate_force_god',
@@ -311,6 +313,9 @@ export const slatesData: Record<string, SlateData> = {
     ],
   },
 };
+
+// 从数据服务获取石板数据（优先使用同步数据）
+export const slatesData: Record<string, SlateData> = dataService.getSlate() || localSlatesData;
 
 export function getSlate(id: string): SlateData | undefined {
   return slatesData[id];

@@ -452,6 +452,42 @@ export interface SkillRangePctMod {
   srcDetail?: string;
 }
 
+// 异常状态触发几率加成
+export interface AilmentChancePctMod {
+  type: 'AilmentChancePct';
+  value: number;
+  addn: boolean;
+  ailmentType?: 'ignite' | 'frostbite' | 'shock' | 'erosion' | 'all';
+  per?: PerStackable;
+  cond?: Condition;
+  src?: ModSource;
+  srcDetail?: string;
+}
+
+// 异常状态持续时间加成
+export interface AilmentDurationPctMod {
+  type: 'AilmentDurationPct';
+  value: number;
+  addn: boolean;
+  ailmentType?: 'ignite' | 'frostbite' | 'shock' | 'erosion' | 'all';
+  per?: PerStackable;
+  cond?: Condition;
+  src?: ModSource;
+  srcDetail?: string;
+}
+
+// 异常状态效果加成（如点燃伤害、感电效果等）
+export interface AilmentEffectPctMod {
+  type: 'AilmentEffectPct';
+  value: number;
+  addn: boolean;
+  ailmentType?: 'ignite' | 'frostbite' | 'shock' | 'erosion' | 'all';
+  per?: PerStackable;
+  cond?: Condition;
+  src?: ModSource;
+  srcDetail?: string;
+}
+
 // 所有 Mod 的联合类型
 export type Mod =
   | DmgPctMod
@@ -486,4 +522,7 @@ export type Mod =
   | ConsecutiveAtkChanceMod
   | EnemyDmgTakenMod
   | SkillRangePctMod
+  | AilmentChancePctMod
+  | AilmentDurationPctMod
+  | AilmentEffectPctMod
   | StatMod;

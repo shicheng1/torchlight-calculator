@@ -2,13 +2,7 @@ import type { Mod } from '../types/mod.ts';
 import type { Loadout, TalentNodeConfig, CoreTalentSelection, DivinitySlateConfig, HeroMemoryConfig, PactspiritConfig } from '../types/calc.ts';
 import type { GearInstance } from '../types/gear.ts';
 import type { SkillGroup } from '../types/skill.ts';
-import { getSkill } from '@/data/skills/index.ts';
-import { getAllTalentBoards } from '@/data/talent-trees/index.ts';
-import { getSlate } from '@/data/slate/index.ts';
-import { getHeroMemory } from '@/data/hero-memory/index.ts';
-import { getPactspirit } from '@/data/pactspirit/index.ts';
-import { getHero } from '@/data/heroes/index.ts';
-import { getGearBase, getSetBonuses } from '@/data/gear/index.ts';
+import { dataCache } from '../utils/data-cache.ts';
 
 /**
  * 从完整的 BD 配置（Loadout）中收集所有 Mod
@@ -45,10 +39,10 @@ export function collectAllMods(loadout: Loadout): Mod[] {
 }
 
 function collectFromHeroTraits(heroConfig: Loadout['hero'], mods: Mod[]): void {
-  const heroData = getHero(heroConfig.heroId);
+  const heroData = dataCache.getHero(heroConfig.heroId);
   if (!heroData) return;
 
-  const currentTrait = heroData.traits.find(t => t.id === heroConfig.traitId);
+  const currentTrait = heroData.traits.find((t: any) => t.id === heroConfig.traitId);
   if (!currentTrait) return;
 
   // 收集所有等级不超过当前等级的特性 Mods
@@ -66,14 +60,11 @@ function collectFromGear(gear: Loadout['gear'], mods: Mod[]): void {
     gear.neck, gear.ring1, gear.ring2, gear.belt,
   ];
 
-  // 统计套装数量
-  const setCounts = new Map<string, number>();
-
   for (const instance of instances) {
     if (!instance) continue;
 
     // 收集基底隐含属性
-    const gearBase = getGearBase(instance.baseId);
+    const gearBase = dataCache.getGearBase(instance.baseId);
     if (gearBase) {
       // 收集基底隐含属性
       mods.push(...gearBase.implicitMods);
@@ -97,21 +88,6 @@ function collectFromGear(gear: Loadout['gear'], mods: Mod[]): void {
     if (instance.corruptionMods) {
       mods.push(...instance.corruptionMods);
     }
-
-    // 统计套装数量
-    if (instance.setId) {
-      setCounts.set(instance.setId, (setCounts.get(instance.setId) || 0) + 1);
-    }
-  }
-
-  // 计算套装效果
-  for (const [setId, count] of setCounts.entries()) {
-    const setBonuses = getSetBonuses(setId);
-    for (const bonus of setBonuses) {
-      if (count >= bonus.piecesRequired) {
-        mods.push(...bonus.mods);
-      }
-    }
   }
 }
 
@@ -120,7 +96,7 @@ function collectFromSkills(skillGroups: SkillGroup[], mods: Mod[]): void {
     if (!group.enabled) continue;
 
     // 收集主动技能等级 Mod
-    const skillData = getSkill(group.activeSkill.skillId);
+    const skillData = dataCache.getSkill(group.activeSkill.skillId);
     if (skillData?.levelMods) {
       const skillMods = skillData.levelMods(group.activeSkill.level);
       mods.push(...skillMods);
@@ -129,7 +105,7 @@ function collectFromSkills(skillGroups: SkillGroup[], mods: Mod[]): void {
     // 收集辅助技能 Mod
     for (const support of group.supportSkills) {
       if (!support.enabled) continue;
-      const supportData = getSkill(support.skillId);
+      const supportData = dataCache.getSkill(support.skillId);
       if (supportData?.levelMods) {
         const supportMods = supportData.levelMods(support.level);
         mods.push(...supportMods);
@@ -139,7 +115,7 @@ function collectFromSkills(skillGroups: SkillGroup[], mods: Mod[]): void {
 }
 
 function collectFromTalents(talents: TalentNodeConfig[], mods: Mod[]): void {
-  const boards = getAllTalentBoards();
+  const boards = dataCache.getAllTalentBoards();
   const nodeMap = new Map<string, { mods: Mod[] }>();
 
   for (const board of boards) {
@@ -161,7 +137,7 @@ function collectFromTalents(talents: TalentNodeConfig[], mods: Mod[]): void {
 }
 
 function collectFromCoreTalents(coreTalents: CoreTalentSelection[], mods: Mod[]): void {
-  const boards = getAllTalentBoards();
+  const boards = dataCache.getAllTalentBoards();
 
   if (!Array.isArray(coreTalents)) return;
 
@@ -169,10 +145,10 @@ function collectFromCoreTalents(coreTalents: CoreTalentSelection[], mods: Mod[])
     const board = boards.find(b => b.id === ct.boardId);
     if (!board) continue;
 
-    const slot = board.coreSlots.find(s => s.slotIndex === ct.slotIndex);
+    const slot = board.coreSlots.find((s: any) => s.slotIndex === ct.slotIndex);
     if (!slot) continue;
 
-    const option = slot.options.find(o => o.id === ct.optionId);
+    const option = slot.options.find((o: any) => o.id === ct.optionId);
     if (!option) continue;
 
     mods.push(...option.mods);
@@ -181,7 +157,7 @@ function collectFromCoreTalents(coreTalents: CoreTalentSelection[], mods: Mod[])
 
 function collectFromSlates(slates: DivinitySlateConfig[], mods: Mod[]): void {
   for (const slateConfig of slates) {
-    const slateData = getSlate(slateConfig.slateId);
+    const slateData = dataCache.getSlate(slateConfig.slateId);
     if (!slateData) continue;
 
     // 石板基础属性
@@ -194,7 +170,7 @@ function collectFromSlates(slates: DivinitySlateConfig[], mods: Mod[]): void {
 
 function collectFromMemories(memories: HeroMemoryConfig[], mods: Mod[]): void {
   for (const memoryConfig of memories) {
-    const memoryData = getHeroMemory(memoryConfig.memoryId);
+    const memoryData = dataCache.getHeroMemory(memoryConfig.memoryId);
     if (!memoryData) continue;
 
     // 收集所有套装加成
@@ -206,7 +182,7 @@ function collectFromMemories(memories: HeroMemoryConfig[], mods: Mod[]): void {
 
 function collectFromPactspirits(pactspirits: PactspiritConfig[], mods: Mod[]): void {
   for (const spiritConfig of pactspirits) {
-    const spiritData = getPactspirit(spiritConfig.spiritId);
+    const spiritData = dataCache.getPactspirit(spiritConfig.spiritId);
     if (!spiritData) continue;
 
     // 收集当前阶位及以下的所有效果

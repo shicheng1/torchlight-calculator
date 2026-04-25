@@ -1,4 +1,5 @@
 import type { SkillData } from '@/engine/types/skill.ts';
+import { dataService } from '@/data/sync/data-adapter.ts';
 import {
   summonSpiderTank,
   summonMechanicalGuard,
@@ -23,7 +24,8 @@ import {
   timeRelease,
 } from './yarga-skills.ts';
 
-export const skillsData: Record<string, SkillData> = {
+// 本地备用数据
+const localSkillsData: Record<string, SkillData> = {
   // 莫托技能
   summon_spider_tank: summonSpiderTank,
   summon_mechanical_guard: summonMechanicalGuard,
@@ -45,6 +47,9 @@ export const skillsData: Record<string, SkillData> = {
   spacetime_illusion: spacetimeIllusion,
   time_release: timeRelease,
 };
+
+// 获取技能数据（优先使用同步数据）
+export const skillsData: Record<string, SkillData> = dataService.getSkills() || localSkillsData;
 
 export function getSkill(id: string): SkillData | undefined {
   return skillsData[id];

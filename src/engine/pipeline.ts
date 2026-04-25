@@ -14,15 +14,25 @@ import { calcMinionDamage } from './calc/minion-calc.ts';
 import { DMG_CHUNK_TYPES } from './constants/damage-types.ts';
 import { SPELL_BASE_CRIT_RATING } from './constants/defaults.ts';
 import { getSkill } from '@/data/skills/index.ts';
+import { calculationCache } from './utils/cache.ts';
 
 /**
  * 主计算管线入口
  * 三阶段：收集 -> 解析 -> 聚合 -> 计算
  */
-export function calculate(
+export async function calculate(
   loadout: Loadout,
   config: CalculationConfig
-): CalculationResult {
+): Promise<CalculationResult> {
+  // 生成缓存键
+  const cacheKey = calculationCache.generateKey(loadout, config);
+  
+  // 检查缓存
+  const cachedResult = calculationCache.get(cacheKey);
+  if (cachedResult) {
+    return cachedResult;
+  }
+
   // 阶段1：收集所有 Mod
   const allMods = collectAllMods(loadout);
 
@@ -44,23 +54,30 @@ export function calculate(
   // 阶段3：聚合 Mod
   const aggregated = aggregateMods(resolvedMods);
 
+  let result: CalculationResult;
+
   // === 如果是召唤物技能，走召唤物管线 ===
   if (isMinion) {
-    return calculateMinionPipeline(loadout, config, aggregated, skillTags, skillData);
+    result = calculateMinionPipeline(loadout, config, aggregated, skillTags, skillData);
+  } else {
+    // === 普通伤害管线 ===
+    result = await calculateNormalPipeline(loadout, config, aggregated, skillTags, isAttack, skillData);
   }
 
-  // === 普通伤害管线 ===
-  return calculateNormalPipeline(loadout, config, aggregated, skillTags, isAttack, skillData);
+  // 缓存结果
+  calculationCache.set(cacheKey, result);
+
+  return result;
 }
 
-function calculateNormalPipeline(
+async function calculateNormalPipeline(
   _loadout: Loadout,
   config: CalculationConfig,
   aggregated: ReturnType<typeof aggregateMods>,
   skillTags: SkillTag[],
   isAttack: boolean,
   skillData: ReturnType<typeof getSkill>,
-): CalculationResult {
+): Promise<CalculationResult> {
   // 基础伤害
   // 获取当前技能配置
   const skillGroup = _loadout.skillGroups[_loadout.selectedSkillGroupIndex];
@@ -88,7 +105,7 @@ function calculateNormalPipeline(
   const { result: convertedChunks } = applyDamageConversion(avgChunks, aggregated.convertDmg);
 
   // INC/More 乘区
-  const { result: multipliedChunks, incBreakdown, moreBreakdown } = applyDamageMultipliers(
+  const { result: multipliedChunks, incBreakdown, moreBreakdown } = await applyDamageMultipliers(
     convertedChunks, aggregated, skillTags, aggregated.totalStr
   );
 
@@ -121,6 +138,7 @@ function calculateNormalPipeline(
     armorMitigation,
     incBreakdown,
     moreBreakdown,
+    aggregated,
   });
 }
 
@@ -164,5 +182,6 @@ function calculateMinionPipeline(
     incBreakdown: [],
     moreBreakdown: [],
     minionDetail,
+    aggregated,
   });
 }

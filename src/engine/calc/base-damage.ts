@@ -38,49 +38,36 @@ export function calcBaseDamage(input: BaseDamageInput): BaseDamageResult {
   const totalBaseDamagePct = input.skillBaseDamagePct + levelBonus;
   const pctMultiplier = totalBaseDamagePct / 100;
 
-  if (input.isAttack) {
-    // 攻击技能：武器面板伤害 × 技能百分比 + 附加伤害
-    for (const dmgType of DMG_CHUNK_TYPES) {
+  // 合并循环，减少遍历次数
+  for (const dmgType of DMG_CHUNK_TYPES) {
+    if (input.isAttack) {
+      // 攻击技能：武器面板伤害 × 技能百分比 + 附加伤害
       const weaponDmg = input.weaponBaseDamage[dmgType];
       if (weaponDmg) {
         chunks[dmgType].min += weaponDmg.min * pctMultiplier;
         chunks[dmgType].max += weaponDmg.max * pctMultiplier;
       }
-    }
-    // 附加点伤（受技能伤害效用影响）
-    const flatDmg = input.aggregated.flatDmgToAtks;
-    for (const dmgType of DMG_CHUNK_TYPES) {
-      const flat = flatDmg[dmgType];
+      // 附加点伤（受技能伤害效用影响）
+      const flat = input.aggregated.flatDmgToAtks[dmgType];
       if (flat) {
         chunks[dmgType].min += flat.min * input.skillEffectiveness;
         chunks[dmgType].max += flat.max * input.skillEffectiveness;
       }
-    }
-  } else {
-    // 法术技能：法术基础点伤 × 技能百分比 + 附加伤害
-    for (const dmgType of DMG_CHUNK_TYPES) {
+    } else {
+      // 法术技能：法术基础点伤 × 技能百分比 + 附加伤害
       const spellDmg = input.spellBaseDamage[dmgType];
       if (spellDmg) {
         chunks[dmgType].min += spellDmg.min * pctMultiplier;
         chunks[dmgType].max += spellDmg.max * pctMultiplier;
       }
-    }
-    // 法术附加点伤（不受技能伤害效用影响）
-    const flatDmg = input.aggregated.flatDmgToSpells;
-    for (const dmgType of DMG_CHUNK_TYPES) {
-      const flat = flatDmg[dmgType];
+      // 法术附加点伤（不受技能伤害效用影响）
+      const flat = input.aggregated.flatDmgToSpells[dmgType];
       if (flat) {
         chunks[dmgType].min += flat.min;
         chunks[dmgType].max += flat.max;
       }
     }
   }
-
-  // 技能标签对伤害的影响
-  // 根据技能标签应用额外的伤害加成
-  // 这里可以根据不同的技能标签应用不同的伤害加成
-  // 例如：投射物技能、范围技能、持续伤害技能等
-  // 目前暂时不做额外处理，后续可以根据官方编年史的数据进行调整
 
   return { chunks };
 }

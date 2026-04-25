@@ -116,6 +116,14 @@ export interface CalculationResult {
     shockDPS: number;
     erosionDPS: number;
     totalDotDPS: number;
+    igniteChance: number;
+    frostbiteChance: number;
+    shockChance: number;
+    erosionChance: number;
+    igniteDuration: number;
+    frostbiteDuration: number;
+    shockDuration: number;
+    erosionDuration: number;
   };
 }
 
@@ -129,6 +137,9 @@ export interface AggregatedMods {
   incCritDmg: Partial<Record<string, number>>;
   incMinionDmg: number;
   incMinionAspd: number;
+  
+  // 固定暴击值
+  flatCritRating: Partial<Record<string, number>>;
 
   // More 类：每个独立项保留
   moreDmg: { value: number; modType: DmgModType; src: string; detail?: string }[];
@@ -170,6 +181,14 @@ export interface AggregatedMods {
   totalStr: number;
   totalDex: number;
   totalInt: number;
+
+  // 异常状态
+  incAilmentChance: Partial<Record<string, number>>; // 异常状态触发几率增加
+  moreAilmentChance: { value: number; ailmentType: string; src: string }[]; // 异常状态触发几率额外增加
+  incAilmentDuration: Partial<Record<string, number>>; // 异常状态持续时间增加
+  moreAilmentDuration: { value: number; ailmentType: string; src: string }[]; // 异常状态持续时间额外增加
+  incAilmentEffect: Partial<Record<string, number>>; // 异常状态效果增加
+  moreAilmentEffect: { value: number; ailmentType: string; src: string }[]; // 异常状态效果额外增加
 }
 
 // 完整的 BD 配置（Loadout）
